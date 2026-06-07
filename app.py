@@ -87,6 +87,7 @@ async def call_api(
     api_key: str,
     temperature: float = 0.8,
     max_tokens: int = 6000,
+    timeout: float = 300.0,
 ) -> str:
     payload = {
         "model": MODEL,
@@ -95,15 +96,27 @@ async def call_api(
         "max_tokens": max_tokens,
     }
 
-    async with httpx.AsyncClient(timeout=180.0) as client:
-        resp = await client.post(
-            f"{NANO_GPT_BASE_URL}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(timeout, connect=15.0)
+        ) as client:
+            resp = await client.post(
+                f"{NANO_GPT_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            504,
+            f"The model took too long to respond (>{int(timeout)}s). "
+            "Try again — thinking models can be slow on large requests. "
+            "If it keeps happening, shorten your conversation before generating."
         )
+    except httpx.RequestError as e:
+        raise HTTPException(502, f"Network error reaching Nano-GPT: {e}")
 
     if resp.status_code != 200:
         raise HTTPException(resp.status_code, f"Nano-GPT API error: {resp.text}")
@@ -209,6 +222,7 @@ async def generate_card(req: GenerateRequest):
         api_key=api_key,
         temperature=0.7,
         max_tokens=8000,
+        timeout=600.0,  # thinking models can take several minutes for full card generation
     )
 
     card = extract_json(raw)
@@ -264,6 +278,7 @@ async def regenerate_card(req: RegenerateRequest):
         api_key=api_key,
         temperature=0.75,
         max_tokens=8000,
+        timeout=600.0,
     )
 
     card = extract_json(raw)

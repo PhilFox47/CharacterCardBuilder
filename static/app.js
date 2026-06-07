@@ -283,10 +283,17 @@ async function sendMessage() {
 async function generateCard() {
   if (!state.sessionId || state.loading) return;
 
-  addMessage('assistant', '✨ Generating your character card — this may take a moment…');
+  addMessage('assistant', '✨ Generating your character card — this uses a thinking model and typically takes 1–3 minutes. Please wait…');
   chatStatus.textContent = 'Generating card…';
   setLoading(true);
   addTypingIndicator();
+
+  // Show elapsed time so the user knows it hasn't frozen
+  const startTime = Date.now();
+  const timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    chatStatus.textContent = `Generating… ${elapsed}s`;
+  }, 1000);
 
   try {
     const res = await apiFetch('/api/generate', 'POST', {
@@ -294,6 +301,7 @@ async function generateCard() {
       api_key: getApiKey() || null,
     });
 
+    clearInterval(timerInterval);
     removeTypingIndicator();
     state.card = res.card;
     renderCard(res.card);
@@ -302,10 +310,11 @@ async function generateCard() {
     toast('Card generated successfully!', 'success');
 
   } catch (err) {
+    clearInterval(timerInterval);
     removeTypingIndicator();
-    addMessage('assistant', `⚠ Generation error: ${err.message}\n\nPlease try again or add more details first.`);
+    addMessage('assistant', `⚠ Generation error: ${err.message}\n\nPlease try again — thinking models occasionally time out on large requests.`);
     toast(`Generation failed: ${err.message}`, 'error');
-    chatStatus.textContent = 'Gathering details…';
+    chatStatus.textContent = 'Ready to generate!';
   } finally {
     setLoading(false);
   }
@@ -320,6 +329,12 @@ async function regenerateCard() {
   setLoading(true);
   addTypingIndicator();
 
+  const startTime = Date.now();
+  const timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    chatStatus.textContent = `Regenerating… ${elapsed}s`;
+  }, 1000);
+
   try {
     const res = await apiFetch('/api/regenerate', 'POST', {
       session_id: state.sessionId,
@@ -327,6 +342,7 @@ async function regenerateCard() {
       api_key: getApiKey() || null,
     });
 
+    clearInterval(timerInterval);
     removeTypingIndicator();
     state.card = res.card;
     renderCard(res.card);
@@ -335,6 +351,7 @@ async function regenerateCard() {
     toast('Card regenerated!', 'success');
 
   } catch (err) {
+    clearInterval(timerInterval);
     removeTypingIndicator();
     toast(`Regeneration failed: ${err.message}`, 'error');
     chatStatus.textContent = 'Card generated!';

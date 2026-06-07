@@ -98,7 +98,7 @@ FRICTION PRESET VALUES — embed these in how the card is written:
 - Characters' sexuality is THEIR OWN — independent of and often unlike what {{user}} might want
 - Likes/dislikes must be concrete and character-specific, revealing of personality
 - Voice and speech patterns are a fixed identity trait
-- Friction's relationship system tracks four axes: Trust, Attraction, Affection, Respect — each −20 to +20. Characters typically START at 0 on all axes toward a stranger {{user}}. Encode opening axis hints in the Other() field.
+- Friction's relationship system tracks four axes: Trust, Attraction, Affection, Respect — each −20 to +20. Opening axis values depend entirely on the described relationship context: strangers with no reason to feel anything start near 0; characters meeting {{user}} for the first time can still have non-zero Attraction if appearance/vibe warrants it for THIS character; characters with established history (friends, rivals, ex-lovers, colleagues) should start wherever that history honestly puts them. Set opening axis values to reflect the actual setup — don't default everything to 0. Encode the starting values and what specifically moves them for this character in the Other() field.
 
 OUTPUT FORMAT:
 Output ONLY the raw JSON object. No markdown code blocks (no ```), no preamble, no explanation text. Start directly with { and end with }.
@@ -132,10 +132,42 @@ JSON STRUCTURE — follow exactly:
 }
 
 ═══════════════════════════════════════
-DESCRIPTION FIELD — parenthetical format
+DESCRIPTION FIELD — FORMAT SELECTION
 ═══════════════════════════════════════
 
-Use this exact parenthetical style for the description field. Each block is separated by a blank line. Use \\r\\n for newlines within the JSON string.
+Choose the description format that fits the character's nature. Use \\r\\n for newlines in the JSON string.
+
+──────────────────────────────────────
+FORMAT A — PROSE STYLE
+Use for: modern/realistic settings, contemporary humans, grounded characters
+(Reference: characters like Joanne — a normal person at a fair)
+
+Write the description as flowing prose paragraphs, then use labelled sections for specific data. Example structure:
+
+[Opening prose paragraph: who they are, their vibe, how they present — written naturally, not as a data dump. 3–5 sentences that capture their essence and presence.]
+
+[Second prose paragraph if needed: personality in action, how they come across to strangers, what makes them distinctive.]
+
+Visual Appearance:
+
+[Detailed prose description of their look — build, face, distinctive features, any accessories. Specific and concrete.]
+
+Age: [number]
+
+Clothing:
+
+[Default outfit — specific colors, materials, items listed or in short prose. What they actually wear day-to-day or in the opening scenario.]
+
+Notable Physical Features: [comma-separated list of standout traits: eye color, hair, piercings, tattoos, marks, etc.]
+
+[If NSFW: Kinks/Sexual Nature: [direct description of their sexual personality, what they're into, how it connects to their character]]
+
+──────────────────────────────────────
+FORMAT B — PARENTHETICAL STYLE
+Use for: fantasy/isekai/non-human characters, royalty, characters from other worlds, highly structured builds
+(Reference: characters like Illyria — an elven queen with detailed world-building)
+
+Use this block structure, each separated by a blank line:
 
 Name(character name)
 
@@ -145,47 +177,54 @@ Sexuality(orientation with nuance — e.g. "Bisexual, strongly prefers women; dr
 
 Age(number; if non-human also give human equivalent — e.g. "347, equivalent to a late-20s human")
 
-Height(metric first, then imperial in quotes — e.g. "188cm / 6'2\\"")
+Height(metric first, then imperial — e.g. "188cm / 6'2\\"")
 
 Occupation(specific title or role)
 
-Hair(color — be specific and rich, e.g. "deep auburn with copper highlights at the tips"; length; texture; typical style)
+Hair(color — specific and rich; length; texture; typical style)
 
-Eyes(color with specificity — e.g. "pale grey-green, like sea-glass"; shape; any unusual features)
+Eyes(color with specificity — e.g. "pale grey-green, like sea-glass"; any unusual features)
 
-Body(height reference, build — specific not generic: "lean but broad-shouldered, hands roughened by years of smithing"; proportions; any notable physical traits)
+Body(build — specific not generic: "lean but broad-shouldered"; proportions; notable traits)
 
-Skin(tone — specific, e.g. "warm medium-brown with a golden undertone"; texture; freckles, scars, tattoos if any)
+Skin(tone — specific; texture; any marks, scars, tattoos)
 
-[Include only if character is female or relevant: Breasts(cup size, shape, any notable features)]
+[If female or relevant: Breasts(cup size, shape, notable features)]
 
-Personality(list 6–9 traits including shadow traits and contradictions, comma-separated — e.g. "composed, observant, darkly sardonic, generous with strangers and cold with loved ones, secretly terrified of being ordinary, patient to a fault until suddenly not")
+Personality(6–9 traits including shadow traits and contradictions, comma-separated)
 
-Voice(timber, quality, accent, speed — e.g. "low and measured, faint coastal accent she's mostly ironed out, rarely raises it and never needs to")
+Voice(timber, quality, accent, speed)
 
-Speech(how they actually talk: register, vocabulary level, how it shifts with mood or threat, any verbal tics or habits — e.g. "formal with strangers, drops into blunt sentence fragments when annoyed, never swears in anger — only in delight, tends to let silences sit longer than comfortable")
+Speech(how they talk: register, vocabulary, how it shifts with mood, verbal tics)
 
-Likes(at least 7 specific, concrete items that reveal character — avoid generics. Bad: "music". Good: "the specific hush right before a storm breaks", "winning an argument she started on purpose", "the smell of a library at midnight")
+Likes(at least 7 specific, concrete, revealing items — not generics)
 
-Dislikes(at least 7 specific, concrete items — equally revealing. "being thanked effusively", "people who laugh at their own jokes", "the colour yellow for no reason she can articulate")
+Dislikes(at least 7 specific, concrete, revealing items)
 
-Attire(default outfit in rich detail — specific colors, material, cut, fit, accessories, footwear. Describe what they actually wear, not what they could wear.)
+Attire(default outfit — specific colors, material, cut, accessories, footwear)
 
-[Include only if NSFW content was discussed: Sexual Characteristics(their sexual nature: dominant/submissive/switch, specific turn-ons and kinks, how they express desire, limits, how sexuality connects to their broader personality)]
+[If NSFW: Sexual Characteristics(dominant/submissive/switch, specific turn-ons and kinks, limits, how sexuality connects to personality)]
 
-Connections(important people, places, factions in their orbit — names and one-line relationships)
+Connections(important people, places, factions — names and one-line relationships)
 
-Home(where they live, described with texture — not just "a city apartment" but what kind, what it looks like, what it says about them)
+Home(where they live, with texture — what it looks like, what it says about them)
 
 Goal(immediate desire + long-term ambition — both specific)
 
-Fears(what they dread — concrete, not abstract; these feed roleplay tension)
+Fears(concrete fears that feed roleplay tension)
 
-Secrets(things hidden even from close allies — keep these rich for Tapestry use)
+Secrets(things hidden from close allies — rich for Tapestry use)
 
-Other(behavioral notes for the AI running this character: how {{char}} initially perceives {{user}}, what their opening relationship axes roughly are [Trust 0, Attraction 0, Affection 0, Respect 0 — adjust from 0 only if the setup clearly warrants it], what would move those axes up or down specifically for this character's values, any important behavioral flags)
+Other(behavioral notes: how {{char}} perceives {{user}}, their opening relationship axis values and why [e.g. Trust +2, Attraction +5, Affection 0, Respect 0 — set based on the actual setup, not defaulted to 0], what moves each axis up or down for THIS character specifically, any behavioral flags)
 
-Backstory(3–6 sentences of rich narrative explaining WHY they are who they are — formative events, wounds, turning points. Not a resume, a story.)
+Backstory(3–6 sentences explaining WHY they are who they are — formative events, wounds, turning points. Narrative, not a resume.)
+
+──────────────────────────────────────
+REGARDLESS OF FORMAT — always include:
+- Enough physical detail for an image generator to render them consistently
+- Concrete, character-specific likes/dislikes (not generic)
+- Honest sexuality that is THEIRS, not mirrored to {{user}}
+- Opening axis values set to reflect the actual relationship context
 
 ═══════════════════════════════════════
 SCENARIO FIELD
@@ -200,13 +239,16 @@ FIRST_MES FIELD
 ═══════════════════════════════════════
 
 Write an immersive, vivid opening scene:
-- Third-person narration from {{user}}'s POV vantage (address {{user}} as "you" is fine, or write it as close third-person observer)
-- Format: *italics for action/description*, "speech in quotes", `backtick for internal thoughts visible to reader`
+- Third-person narration from {{user}}'s POV vantage
 - Establish the scene concretely — location, atmosphere, sensory detail
 - Put {{char}} in motion doing something, not just standing there
-- End on a charged, open beat that invites {{user}}'s response naturally — NOT a direct "What do you do?" question
+- End on a charged, open beat that invites {{user}}'s response naturally — NOT a direct question handed back to them
 - Length: 3–5 paragraphs
 - Use {{char}} and {{user}} placeholders throughout
+
+FORMATTING — match to the character's register:
+  Modern/realistic characters: plain prose narrative, dialogue in "quotes", no special markup. Write naturally, like a third-person short story excerpt. (See Joanne example — no asterisks, no backticks.)
+  Fantasy/immersive/non-human characters: *italics for action/description*, "speech in quotes", and optionally `backtick for thoughts visible to reader`. Use the markup that serves immersion — don't apply it mechanically.
 
 ═══════════════════════════════════════
 ALTERNATE_GREETINGS FIELD
@@ -217,7 +259,7 @@ Write 3–5 alternate opening scenarios. Each should be a meaningfully different
 - A later/earlier point in their relationship
 - A different emotional register (tense vs. warm vs. playful)
 - A scenario that unlocks a different side of the character
-Same format as first_mes.
+Use the same prose format as first_mes — match the character's register (plain prose for modern/realistic, markup for fantasy/immersive).
 
 ═══════════════════════════════════════
 TAGS FIELD

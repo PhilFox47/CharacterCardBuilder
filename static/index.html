@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Character Card Builder</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- Loading bar -->
+<div class="loading-bar" id="loadingBar" style="display:none"></div>
+
+<!-- ── App Shell ──────────────────────────────────────────── -->
+<div class="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <span style="font-size:20px">⚔</span>
+    <h1>Character Card Builder</h1>
+    <span class="header-subtitle">SillyTavern · Friction Preset · Nano-GPT</span>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="newBtn" style="display:none">＋ New Card</button>
+      <button class="btn-icon" id="settingsBtn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="app-body">
+
+    <!-- Chat panel -->
+    <div class="chat-panel" id="chatPanel">
+
+      <!-- Top bar (hidden until session starts) -->
+      <div class="chat-topbar" id="chatTopbar" style="display:none">
+        <span class="chat-type-badge" id="typeBadge">Single</span>
+        <span style="font-size:13px; color:var(--text-muted)" id="chatStatus">Gathering details…</span>
+        <div class="chat-topbar-actions">
+          <button class="btn btn-secondary" id="generateBtn">✨ Generate Card</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area" id="chatInputArea" style="display:none">
+        <div class="chat-input-row">
+          <textarea
+            id="messageInput"
+            placeholder="Describe your character idea…"
+            rows="2"
+          ></textarea>
+          <button class="btn-send" id="sendBtn">↑</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Card preview panel -->
+    <div class="card-panel" id="cardPanel">
+      <div class="card-panel-header">
+        <h3 id="cardName">Card Preview</h3>
+        <button class="btn btn-ghost btn-icon" id="regenBtn" style="display:none" title="Regenerate">↺</button>
+        <button class="btn btn-gold" id="downloadBtn" style="display:none">⬇ Download</button>
+      </div>
+
+      <div class="card-tabs" id="cardTabs" style="display:none">
+        <button class="tab-btn active" data-tab="preview">Preview</button>
+        <button class="tab-btn" data-tab="greetings">Greetings</button>
+        <button class="tab-btn" data-tab="json">JSON</button>
+      </div>
+
+      <div class="card-content" id="cardContent">
+        <!-- Empty state -->
+        <div class="card-empty" id="cardEmpty">
+          <div class="card-empty-icon">📜</div>
+          <div class="card-empty-text">
+            Your generated card will appear here.<br>
+            Start a conversation, then click<br>
+            <strong style="color:var(--accent)">✨ Generate Card</strong>
+          </div>
+        </div>
+
+        <!-- Preview tab -->
+        <div class="tab-pane" id="tabPreview" style="display:none">
+          <div class="preview-field" id="pfDescription">
+            <div class="preview-label">Description</div>
+            <div class="preview-value" id="pvDescription"></div>
+          </div>
+          <div class="preview-field" id="pfScenario">
+            <div class="preview-label">Scenario</div>
+            <div class="preview-value" id="pvScenario"></div>
+          </div>
+          <div class="preview-field" id="pfFirstMes">
+            <div class="preview-label">First Message</div>
+            <div class="preview-value" id="pvFirstMes"></div>
+          </div>
+          <div class="preview-field" id="pfCreatorNotes">
+            <div class="preview-label">Creator Notes</div>
+            <div class="preview-value" id="pvCreatorNotes"></div>
+          </div>
+          <div class="preview-field" id="pfTags">
+            <div class="preview-label">Tags</div>
+            <div class="preview-tags" id="pvTags"></div>
+          </div>
+        </div>
+
+        <!-- Greetings tab -->
+        <div class="tab-pane" id="tabGreetings" style="display:none">
+          <div class="preview-field">
+            <div class="preview-label">First Message</div>
+            <div class="preview-greeting" id="gFirstMes"></div>
+          </div>
+          <div id="altGreetingsList"></div>
+        </div>
+
+        <!-- JSON tab -->
+        <div class="tab-pane json-pane" id="tabJson" style="display:none">
+          <pre id="jsonContent"></pre>
+        </div>
+
+      </div><!-- /card-content -->
+    </div><!-- /card-panel -->
+
+  </div><!-- /app-body -->
+</div><!-- /app -->
+
+<!-- ── Setup Overlay ──────────────────────────────────────── -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <h2>⚔ Character Card Builder</h2>
+    <p>Build rich SillyTavern character cards via AI conversation — optimised for the Friction preset.</p>
+
+    <div class="card-type-grid">
+      <button class="type-btn active" data-type="single">
+        <span class="type-icon">👤</span>
+        <span class="type-label">Single</span>
+        <span class="type-desc">One character, fully detailed</span>
+      </button>
+      <button class="type-btn" data-type="group">
+        <span class="type-icon">👥</span>
+        <span class="type-label">Group</span>
+        <span class="type-desc">2–4 characters together</span>
+      </button>
+      <button class="type-btn" data-type="scenario">
+        <span class="type-icon">🌍</span>
+        <span class="type-label">Scenario</span>
+        <span class="type-desc">World / premise focused</span>
+      </button>
+    </div>
+
+    <div class="api-key-row" id="apiKeyRow">
+      <label>Nano-GPT API Key</label>
+      <input type="password" id="setupApiKey" placeholder="ngpt-…" autocomplete="off">
+      <span class="api-key-note">Your key is never stored server-side — used only for this session.</span>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" style="width:100%; justify-content:center; padding:12px">
+      Start Building →
+    </button>
+  </div>
+</div>
+
+<!-- ── Settings Drawer ────────────────────────────────────── -->
+<div class="settings-drawer" id="settingsDrawer">
+  <div class="settings-header">
+    <h3>⚙ Settings</h3>
+    <button class="btn-icon" id="closeSettingsBtn">✕</button>
+  </div>
+  <div class="settings-body">
+    <div class="settings-field">
+      <label>Nano-GPT API Key</label>
+      <input type="password" id="settingsApiKey" placeholder="ngpt-…" autocomplete="off">
+      <span class="field-note">Used for this session only.</span>
+    </div>
+    <div class="settings-field">
+      <label>Model</label>
+      <input type="text" id="settingsModel" placeholder="xiaomi/mimo-v2.5-pro:thinking" disabled>
+      <span class="field-note">Set via NANO_GPT_MODEL env variable.</span>
+    </div>
+    <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+  </div>
+</div>
+
+<!-- ── Regen Modal ────────────────────────────────────────── -->
+<div class="modal-overlay" id="regenModal" style="display:none">
+  <div class="modal-box">
+    <h3>↺ Regenerate Card</h3>
+    <p>Optionally describe what you'd like changed in this regeneration.</p>
+    <textarea id="regenFeedback" placeholder="e.g. Make her personality darker, add more detail to her backstory, change the setting to steampunk…"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="regenCancelBtn">Cancel</button>
+      <button class="btn btn-secondary" id="regenConfirmBtn">↺ Regenerate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast container ────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

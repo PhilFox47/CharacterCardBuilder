@@ -24,6 +24,7 @@ sessions: Dict[str, dict] = {}
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
+GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "1200"))  # 20 min default
 
 
 # ── Request models ────────────────────────────────────────────────────────────
@@ -222,7 +223,7 @@ async def generate_card(req: GenerateRequest):
         api_key=api_key,
         temperature=0.7,
         max_tokens=8000,
-        timeout=600.0,  # thinking models can take several minutes for full card generation
+        timeout=GENERATION_TIMEOUT,
     )
 
     card = extract_json(raw)
@@ -278,7 +279,7 @@ async def regenerate_card(req: RegenerateRequest):
         api_key=api_key,
         temperature=0.75,
         max_tokens=8000,
-        timeout=600.0,
+        timeout=GENERATION_TIMEOUT,
     )
 
     card = extract_json(raw)

@@ -283,7 +283,7 @@ async function sendMessage() {
 async function generateCard() {
   if (!state.sessionId || state.loading) return;
 
-  addMessage('assistant', '✨ Generating your character card — this uses a thinking model and typically takes 1–3 minutes. Please wait…');
+  addMessage('assistant', '✨ Generating your character card — this uses a thinking model and may take several minutes (longer for group cards). Please wait…');
   chatStatus.textContent = 'Generating card…';
   setLoading(true);
   addTypingIndicator();

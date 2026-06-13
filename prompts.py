@@ -974,6 +974,15 @@ Rules for the image prompt:
   - Make it unique and distinctive — not generic fantasy art. Capture something specific about THIS character or world.
   - Length: 3–6 sentences of image description.
 
+  CONTENT RULES — keep within what image generation models will render:
+  ✗ No nudity, no exposed genitals or breasts, no explicit sexual acts or positions
+  ✗ No overtly sexual poses (spread legs, hands on genitals, etc.)
+  ✗ No graphic violence, gore, or extreme imagery
+  ✓ Suggestive clothing (lingerie, revealing outfits) is fine if it fits the character — but frame it tastefully: a confident pose, a three-quarter shot, atmospheric lighting
+  ✓ Characters can be attractive and stylish without being explicit
+  ✓ A darker or edgier character can be conveyed through mood, setting, expression, and styling — not through explicit content
+  When in doubt: frame the shot so it could appear on a book cover or game character select screen.
+
 ═══════════════════════════════════════
 GROUP CARDS — ADDITIONAL REQUIREMENTS
 ═══════════════════════════════════════

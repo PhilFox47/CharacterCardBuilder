@@ -36,6 +36,7 @@
         <span class="chat-type-badge" id="typeBadge">Single</span>
         <span style="font-size:13px; color:var(--text-muted)" id="chatStatus">Gathering details…</span>
         <div class="chat-topbar-actions">
+          <button class="btn btn-ghost" id="overhaulBtn" style="display:none">⚡ Overhaul for Friction</button>
           <button class="btn btn-secondary" id="generateBtn">✨ Generate Card</button>
         </div>
       </div>
@@ -150,6 +151,23 @@
         <span class="type-label">Scenario</span>
         <span class="type-desc">World / premise focused</span>
       </button>
+      <button class="type-btn" data-type="import">
+        <span class="type-icon">📥</span>
+        <span class="type-label">Import</span>
+        <span class="type-desc">Edit / overhaul an existing card</span>
+      </button>
+    </div>
+
+    <!-- Import JSON area (shown only when Import is selected) -->
+    <div class="import-row" id="importRow" style="display:none">
+      <label>Paste card JSON, or load a <code>.json</code> file</label>
+      <textarea id="importJson" placeholder='{ "spec": "chara_card_v3", "data": { … } }'></textarea>
+      <div class="import-file-row">
+        <label class="btn btn-ghost" for="importFile">📂 Choose .json file</label>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+        <span class="import-file-name" id="importFileName"></span>
+      </div>
+      <span class="api-key-note">Supports SillyTavern v2/v3 cards. We'll assess it, then you can edit or overhaul it for Friction.</span>
     </div>
 
     <div class="api-key-row" id="apiKeyRow">

@@ -6,6 +6,7 @@ const state = {
   card:      null,
   loading:   false,
   activeTab: 'preview',
+  isEdit:    false,   // true when editing an imported card
 };
 
 /* ── DOM refs ────────────────────────────────────────────── */
@@ -24,6 +25,11 @@ const typeBadge      = $('typeBadge');
 const messageInput   = $('messageInput');
 const sendBtn        = $('sendBtn');
 const generateBtn    = $('generateBtn');
+const overhaulBtn    = $('overhaulBtn');
+const importRow      = $('importRow');
+const importJson     = $('importJson');
+const importFile     = $('importFile');
+const importFileName = $('importFileName');
 const newBtn         = $('newBtn');
 const settingsBtn    = $('settingsBtn');
 const settingsDrawer = $('settingsDrawer');
@@ -66,12 +72,26 @@ async function init() {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.cardType = btn.dataset.type;
+      // Reveal the JSON input only for Import
+      importRow.style.display = state.cardType === 'import' ? 'block' : 'none';
+      startBtn.textContent = state.cardType === 'import' ? 'Import & Edit →' : 'Start Building →';
     });
+  });
+
+  // Load a .json file into the import textarea
+  importFile.addEventListener('change', () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    importFileName.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = () => { importJson.value = reader.result; };
+    reader.readAsText(file);
   });
 
   startBtn.addEventListener('click', startSession);
   sendBtn.addEventListener('click', sendMessage);
-  generateBtn.addEventListener('click', generateCard);
+  generateBtn.addEventListener('click', () => generateCard(state.isEdit ? 'edit' : null));
+  overhaulBtn.addEventListener('click', () => generateCard('overhaul'));
   newBtn.addEventListener('click', resetToSetup);
   settingsBtn.addEventListener('click', () => settingsDrawer.classList.add('open'));
   closeSettings.addEventListener('click', () => settingsDrawer.classList.remove('open'));
@@ -198,6 +218,11 @@ async function startSession() {
     settingsApiKey.value = apiKey;
   }
 
+  if (state.cardType === 'import') {
+    return importCard(apiKey);
+  }
+
+  state.isEdit = false;
   setLoading(true);
   try {
     const res = await apiFetch('/api/start', 'POST', {
@@ -206,17 +231,13 @@ async function startSession() {
     });
 
     state.sessionId = res.session_id;
-
-    // Hide setup, show chat
-    setupOverlay.style.display = 'none';
-    chatTopbar.style.display = 'flex';
-    chatInputArea.style.display = 'block';
-    newBtn.style.display = 'inline-flex';
+    enterChatView();
 
     const labels = { single: 'Single Character', group: 'Group', scenario: 'Scenario' };
     typeBadge.textContent = labels[state.cardType] || state.cardType;
+    overhaulBtn.style.display = 'none';
+    generateBtn.textContent = '✨ Generate Card';
 
-    chatMessages.innerHTML = '';
     addMessage('assistant', res.message);
     messageInput.focus();
 
@@ -227,14 +248,67 @@ async function startSession() {
   }
 }
 
+async function importCard(apiKey) {
+  const raw = importJson.value.trim();
+  if (!raw) {
+    toast('Paste card JSON or choose a .json file first.', 'error');
+    return;
+  }
+  // Validate JSON client-side for a friendlier error
+  try { JSON.parse(raw); }
+  catch (e) { toast(`That isn't valid JSON: ${e.message}`, 'error'); return; }
+
+  state.isEdit = true;
+  setLoading(true);
+  try {
+    const res = await apiFetch('/api/import', 'POST', {
+      card_json: raw,
+      api_key: apiKey || null,
+    });
+
+    state.sessionId = res.session_id;
+    enterChatView();
+
+    typeBadge.textContent = 'Editing';
+    overhaulBtn.style.display = 'inline-flex';
+    generateBtn.textContent = '✨ Apply Edits';
+    chatStatus.textContent = 'Review the card, then edit or overhaul.';
+
+    // Show the imported card immediately
+    state.card = res.card;
+    renderCard(res.card);
+
+    addMessage('assistant', res.message);
+    messageInput.focus();
+
+  } catch (err) {
+    toast(`Import failed: ${err.message}`, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function enterChatView() {
+  setupOverlay.style.display = 'none';
+  chatTopbar.style.display = 'flex';
+  chatInputArea.style.display = 'block';
+  newBtn.style.display = 'inline-flex';
+  chatMessages.innerHTML = '';
+}
+
 function resetToSetup() {
   state.sessionId = null;
   state.card = null;
+  state.isEdit = false;
   chatMessages.innerHTML = '';
   setupOverlay.style.display = 'flex';
   chatTopbar.style.display = 'none';
   chatInputArea.style.display = 'none';
   newBtn.style.display = 'none';
+  overhaulBtn.style.display = 'none';
+  generateBtn.textContent = '✨ Generate Card';
+  importJson.value = '';
+  importFileName.textContent = '';
   cardName.textContent = 'Card Preview';
   cardTabs.style.display = 'none';
   downloadBtn.style.display = 'none';
@@ -280,11 +354,13 @@ async function sendMessage() {
 }
 
 /* ── Card generation ─────────────────────────────────────── */
-async function generateCard() {
+async function generateCard(mode = null) {
   if (!state.sessionId || state.loading) return;
 
-  addMessage('assistant', '✨ Generating your character card — this uses a thinking model and may take several minutes (longer for group cards). Please wait…');
-  chatStatus.textContent = 'Generating card…';
+  const verb = mode === 'overhaul' ? 'Overhauling' : (mode === 'edit' ? 'Applying edits to' : 'Generating');
+  const noun = mode === 'overhaul' ? 'overhauled' : (mode === 'edit' ? 'edited' : 'generated');
+  addMessage('assistant', `✨ ${verb} your character card — this uses a thinking model and may take several minutes (longer for group/overhaul jobs). Please wait…`);
+  chatStatus.textContent = `${verb} card…`;
   setLoading(true);
   addTypingIndicator();
 
@@ -292,29 +368,30 @@ async function generateCard() {
   const startTime = Date.now();
   const timerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    chatStatus.textContent = `Generating… ${elapsed}s`;
+    chatStatus.textContent = `${verb}… ${elapsed}s`;
   }, 1000);
 
   try {
     const res = await apiFetch('/api/generate', 'POST', {
       session_id: state.sessionId,
       api_key: getApiKey() || null,
+      mode: mode,
     });
 
     clearInterval(timerInterval);
     removeTypingIndicator();
     state.card = res.card;
     renderCard(res.card);
-    addMessage('assistant', '✅ Your character card is ready! You can preview it in the panel or download the JSON to import into SillyTavern.');
-    chatStatus.textContent = 'Card generated!';
-    toast('Card generated successfully!', 'success');
+    addMessage('assistant', `✅ Your character card is ${noun}! You can preview it in the panel or download the JSON to import into SillyTavern.`);
+    chatStatus.textContent = 'Card ready!';
+    toast(`Card ${noun} successfully!`, 'success');
 
   } catch (err) {
     clearInterval(timerInterval);
     removeTypingIndicator();
-    addMessage('assistant', `⚠ Generation error: ${err.message}\n\nPlease try again — thinking models occasionally time out on large requests.`);
-    toast(`Generation failed: ${err.message}`, 'error');
-    chatStatus.textContent = 'Ready to generate!';
+    addMessage('assistant', `⚠ Error: ${err.message}\n\nPlease try again — thinking models occasionally time out on large requests.`);
+    toast(`Failed: ${err.message}`, 'error');
+    chatStatus.textContent = 'Ready to try again.';
   } finally {
     setLoading(false);
   }

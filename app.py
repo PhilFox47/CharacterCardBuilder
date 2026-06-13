@@ -12,7 +12,13 @@ from pydantic import BaseModel
 import httpx
 from dotenv import load_dotenv
 
-from prompts import CLARIFICATION_SYSTEM, GENERATION_SYSTEM
+from prompts import (
+    CLARIFICATION_SYSTEM,
+    GENERATION_SYSTEM,
+    EDIT_SYSTEM,
+    EDIT_INSTRUCTION,
+    OVERHAUL_INSTRUCTION,
+)
 
 load_dotenv()
 
@@ -41,10 +47,15 @@ class ChatRequest(BaseModel):
 class GenerateRequest(BaseModel):
     session_id: str
     api_key: Optional[str] = None
+    mode: Optional[str] = None  # None | "edit" | "overhaul" (for imported cards)
 
 class RegenerateRequest(BaseModel):
     session_id: str
     feedback: Optional[str] = None
+    api_key: Optional[str] = None
+
+class ImportRequest(BaseModel):
+    card_json: str          # raw JSON text the user pasted/uploaded
     api_key: Optional[str] = None
 
 
@@ -80,6 +91,58 @@ def extract_json(text: str) -> dict:
         if match:
             return json.loads(match.group())
         raise ValueError(f"Could not extract valid JSON from model response. Raw output:\n{text[:500]}")
+
+
+def convo_to_text(messages: list) -> str:
+    """Flatten a message list into a readable transcript for the generator."""
+    return "\n\n".join(
+        f"{'USER' if m['role'] == 'user' else 'ASSISTANT'}: {m['content']}"
+        for m in messages
+    )
+
+
+def finalize_card(card: dict) -> dict:
+    """Stamp metadata and mirror v3 `data` fields to the top level SillyTavern reads."""
+    card["create_date"] = datetime.now().isoformat() + "Z"
+    card["fav"] = False
+    if isinstance(card.get("data"), dict):
+        d = card["data"]
+        card["name"] = d.get("name", "Character")
+        card["description"] = d.get("description", "")
+        card["personality"] = d.get("personality", "")
+        card["scenario"] = d.get("scenario", "")
+        card["first_mes"] = d.get("first_mes", "")
+        card["mes_example"] = d.get("mes_example", "")
+        card["creatorcomment"] = d.get("creator_notes", "")
+        card["tags"] = d.get("tags", [])
+        card["creator"] = d.get("creator", "CharacterCardBuilder")
+        card["character_version"] = d.get("character_version", "")
+        card["avatar"] = "none"
+        card["talkativeness"] = "0.5"
+    return card
+
+
+def normalize_imported_card(raw: dict) -> dict:
+    """Coerce an arbitrary imported card (v2/v3/flat) into our v3 structure."""
+    src = raw.get("data") if isinstance(raw.get("data"), dict) else raw
+    data = {
+        "name": src.get("name", "Imported Character"),
+        "description": src.get("description", ""),
+        "personality": src.get("personality", ""),
+        "scenario": src.get("scenario", ""),
+        "first_mes": src.get("first_mes", ""),
+        "mes_example": src.get("mes_example", ""),
+        "creator_notes": src.get("creator_notes") or raw.get("creatorcomment", "") or "",
+        "system_prompt": src.get("system_prompt", ""),
+        "post_history_instructions": src.get("post_history_instructions", ""),
+        "alternate_greetings": src.get("alternate_greetings", []) or [],
+        "tags": src.get("tags", []) or [],
+        "creator": src.get("creator", "") or "",
+        "character_version": src.get("character_version", "") or "",
+        "character_book": src.get("character_book"),
+        "extensions": src.get("extensions", {}) or {},
+    }
+    return {"spec": "chara_card_v3", "spec_version": "3.0", "data": data}
 
 
 async def call_api(
@@ -182,9 +245,17 @@ async def chat(req: ChatRequest):
 
     session["messages"].append({"role": "user", "content": req.message})
 
+    # Edit sessions use the editor assistant and keep the current card in context.
+    if session.get("imported_card") is not None:
+        card_json = json.dumps(session["generated_card"].get("data", session["generated_card"]),
+                               ensure_ascii=False, indent=2)
+        system = EDIT_SYSTEM + f"\n\nCURRENT CARD JSON:\n{card_json}"
+    else:
+        system = CLARIFICATION_SYSTEM[session["card_type"]]
+
     response = await call_api(
         messages=session["messages"],
-        system=CLARIFICATION_SYSTEM[session["card_type"]],
+        system=system,
         api_key=api_key,
         temperature=0.85,
         max_tokens=1000,
@@ -192,6 +263,45 @@ async def chat(req: ChatRequest):
 
     session["messages"].append({"role": "assistant", "content": response})
     return {"message": response}
+
+
+@app.post("/api/import")
+async def import_card(req: ImportRequest):
+    """Import an existing character card JSON and open an editing session."""
+    api_key = resolve_api_key(req.api_key)
+
+    try:
+        raw = json.loads(req.card_json)
+    except json.JSONDecodeError as e:
+        raise HTTPException(400, f"That doesn't look like valid JSON: {e}")
+    if not isinstance(raw, dict):
+        raise HTTPException(400, "Expected a JSON object representing a character card.")
+
+    card = finalize_card(normalize_imported_card(raw))
+
+    session_id = str(uuid.uuid4())
+    sessions[session_id] = {
+        "card_type": "edit",
+        "messages": [],
+        "created": datetime.now().isoformat(),
+        "imported_card": card,
+        "generated_card": card,
+    }
+
+    # Ask the editor assistant for an opening assessment of the imported card.
+    card_json = json.dumps(card.get("data", card), ensure_ascii=False, indent=2)
+    system = EDIT_SYSTEM + f"\n\nCURRENT CARD JSON:\n{card_json}"
+    initial = await call_api(
+        messages=[{"role": "user", "content":
+                   "I've imported this character card. Give me your assessment and ask what I'd like to do."}],
+        system=system,
+        api_key=api_key,
+        temperature=0.7,
+        max_tokens=1200,
+    )
+
+    sessions[session_id]["messages"].append({"role": "assistant", "content": initial})
+    return {"session_id": session_id, "message": initial, "card": card}
 
 
 @app.post("/api/generate")
@@ -202,20 +312,33 @@ async def generate_card(req: GenerateRequest):
     api_key = resolve_api_key(req.api_key)
     session = sessions[req.session_id]
 
-    if len(session["messages"]) < 2:
-        raise HTTPException(400, "Please have a conversation first so the AI has enough details.")
+    imported = session.get("imported_card")
+    convo_text = convo_to_text(session["messages"])
 
-    # Summarise the full conversation as user context for the generator
-    convo_text = "\n\n".join(
-        f"{'USER' if m['role'] == 'user' else 'ASSISTANT'}: {m['content']}"
-        for m in session["messages"]
-    )
-    gen_prompt = (
-        f"Below is the full character design conversation. "
-        f"Use everything discussed to generate the complete character card JSON.\n\n"
-        f"---\n{convo_text}\n---\n\n"
-        f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
-    )
+    if imported is not None:
+        # Editing/overhauling an imported card.
+        card_json = json.dumps(imported.get("data", imported), ensure_ascii=False, indent=2)
+        instruction = OVERHAUL_INSTRUCTION if req.mode == "overhaul" else EDIT_INSTRUCTION
+        if req.mode != "overhaul" and len(session["messages"]) < 2:
+            raise HTTPException(
+                400,
+                "Tell me what you'd like changed first — or use Overhaul for a full Friction pass."
+            )
+        convo_block = f"\n\nEDITING CONVERSATION:\n{convo_text}" if convo_text else ""
+        gen_prompt = (
+            f"{instruction}\n\n"
+            f"CURRENT CARD JSON:\n{card_json}{convo_block}\n\n"
+            f"Now output the complete revised card as raw JSON."
+        )
+    else:
+        if len(session["messages"]) < 2:
+            raise HTTPException(400, "Please have a conversation first so the AI has enough details.")
+        gen_prompt = (
+            f"Below is the full character design conversation. "
+            f"Use everything discussed to generate the complete character card JSON.\n\n"
+            f"---\n{convo_text}\n---\n\n"
+            f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
+        )
 
     raw = await call_api(
         messages=[{"role": "user", "content": gen_prompt}],
@@ -226,25 +349,7 @@ async def generate_card(req: GenerateRequest):
         timeout=GENERATION_TIMEOUT,
     )
 
-    card = extract_json(raw)
-
-    # Stamp metadata
-    card["create_date"] = datetime.now().isoformat() + "Z"
-    card["fav"] = False
-    if "data" in card:
-        card["name"] = card["data"].get("name", "Character")
-        card["description"] = card["data"].get("description", "")
-        card["personality"] = card["data"].get("personality", "")
-        card["scenario"] = card["data"].get("scenario", "")
-        card["first_mes"] = card["data"].get("first_mes", "")
-        card["mes_example"] = card["data"].get("mes_example", "")
-        card["creatorcomment"] = card["data"].get("creator_notes", "")
-        card["tags"] = card["data"].get("tags", [])
-        card["creator"] = card["data"].get("creator", "CharacterCardBuilder")
-        card["character_version"] = card["data"].get("character_version", "")
-        card["avatar"] = "none"
-        card["talkativeness"] = "0.5"
-
+    card = finalize_card(extract_json(raw))
     session["generated_card"] = card
     return {"card": card}
 
@@ -257,21 +362,28 @@ async def regenerate_card(req: RegenerateRequest):
     api_key = resolve_api_key(req.api_key)
     session = sessions[req.session_id]
 
-    convo_text = "\n\n".join(
-        f"{'USER' if m['role'] == 'user' else 'ASSISTANT'}: {m['content']}"
-        for m in session["messages"]
-    )
-
+    convo_text = convo_to_text(session["messages"])
     feedback_block = ""
     if req.feedback:
         feedback_block = f"\n\nADDITIONAL USER FEEDBACK FOR THIS REGENERATION:\n{req.feedback}"
 
-    gen_prompt = (
-        f"Below is the full character design conversation. "
-        f"Use everything discussed to generate the complete character card JSON.{feedback_block}\n\n"
-        f"---\n{convo_text}\n---\n\n"
-        f"Generate the complete character card JSON. Output ONLY the raw JSON object."
-    )
+    imported = session.get("imported_card")
+    if imported is not None:
+        # Re-run the edit pass on the imported card, honoring extra feedback.
+        card_json = json.dumps(imported.get("data", imported), ensure_ascii=False, indent=2)
+        convo_block = f"\n\nEDITING CONVERSATION:\n{convo_text}" if convo_text else ""
+        gen_prompt = (
+            f"{EDIT_INSTRUCTION}\n\n"
+            f"CURRENT CARD JSON:\n{card_json}{convo_block}{feedback_block}\n\n"
+            f"Now output the complete revised card as raw JSON."
+        )
+    else:
+        gen_prompt = (
+            f"Below is the full character design conversation. "
+            f"Use everything discussed to generate the complete character card JSON.{feedback_block}\n\n"
+            f"---\n{convo_text}\n---\n\n"
+            f"Generate the complete character card JSON. Output ONLY the raw JSON object."
+        )
 
     raw = await call_api(
         messages=[{"role": "user", "content": gen_prompt}],
@@ -282,23 +394,7 @@ async def regenerate_card(req: RegenerateRequest):
         timeout=GENERATION_TIMEOUT,
     )
 
-    card = extract_json(raw)
-    card["create_date"] = datetime.now().isoformat() + "Z"
-    card["fav"] = False
-    if "data" in card:
-        card["name"] = card["data"].get("name", "Character")
-        card["description"] = card["data"].get("description", "")
-        card["personality"] = card["data"].get("personality", "")
-        card["scenario"] = card["data"].get("scenario", "")
-        card["first_mes"] = card["data"].get("first_mes", "")
-        card["mes_example"] = card["data"].get("mes_example", "")
-        card["creatorcomment"] = card["data"].get("creator_notes", "")
-        card["tags"] = card["data"].get("tags", [])
-        card["creator"] = card["data"].get("creator", "CharacterCardBuilder")
-        card["character_version"] = card["data"].get("character_version", "")
-        card["avatar"] = "none"
-        card["talkativeness"] = "0.5"
-
+    card = finalize_card(extract_json(raw))
     session["generated_card"] = card
     return {"card": card}
 

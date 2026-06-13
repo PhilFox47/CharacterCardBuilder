@@ -114,7 +114,7 @@ html, body {
 
 .card-type-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -182,6 +182,56 @@ html, body {
 .api-key-note {
   font-size: 11px;
   color: var(--text-dim);
+}
+
+/* ── Import area ──────────────────────────────────────────── */
+.import-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.import-row label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.import-row label code {
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.import-row textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'Consolas', monospace;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  transition: var(--transition);
+}
+
+.import-row textarea:focus {
+  border-color: var(--accent);
+}
+
+.import-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-file-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Consolas', monospace;
 }
 
 /* ── Chat Panel ───────────────────────────────────────────── */

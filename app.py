@@ -234,7 +234,7 @@ async def start_session(req: StartRequest):
         system=CLARIFICATION_SYSTEM[req.card_type],
         api_key=api_key,
         temperature=0.85,
-        max_tokens=1000,
+        max_tokens=15000,
         model=req.model,
     )
 
@@ -265,7 +265,7 @@ async def chat(req: ChatRequest):
         system=system,
         api_key=api_key,
         temperature=0.85,
-        max_tokens=2500,
+        max_tokens=15000,
         model=req.model,
     )
 
@@ -305,7 +305,7 @@ async def import_card(req: ImportRequest):
         system=system,
         api_key=api_key,
         temperature=0.7,
-        max_tokens=1500,
+        max_tokens=15000,
         model=req.model,
     )
 
@@ -354,7 +354,7 @@ async def generate_card(req: GenerateRequest):
         system=GENERATION_SYSTEM,
         api_key=api_key,
         temperature=0.7,
-        max_tokens=8000,
+        max_tokens=30000,
         timeout=GENERATION_TIMEOUT,
         model=req.model,
     )
@@ -400,7 +400,7 @@ async def regenerate_card(req: RegenerateRequest):
         system=GENERATION_SYSTEM,
         api_key=api_key,
         temperature=0.75,
-        max_tokens=8000,
+        max_tokens=30000,
         timeout=GENERATION_TIMEOUT,
         model=req.model,
     )

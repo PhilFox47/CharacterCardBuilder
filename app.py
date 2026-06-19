@@ -106,12 +106,26 @@ def extract_json(text: str) -> dict:
     text = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.MULTILINE)
     text = re.sub(r"\s*```\s*$", "", text.strip(), flags=re.MULTILINE)
     text = text.strip()
+    print(f"[extract_json] output length after stripping thinking: {len(text)} chars", flush=True)
     try:
         return json.loads(text)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as first_err:
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
-            return json.loads(match.group())
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        # Distinguish truncation from other parse errors
+        err_str = str(first_err)
+        if "Unterminated string" in err_str or "Expecting" in err_str:
+            raise ValueError(
+                "The model's output was cut off mid-JSON — the card JSON was truncated before "
+                f"it could be completed ({len(text):,} chars of output). "
+                "This happens when a thinking model uses most of the token budget on internal "
+                "reasoning. Try regenerating; if it keeps failing, consider using a less "
+                "token-heavy model for generation."
+            )
         raise ValueError(f"Could not extract valid JSON from model response. Raw output:\n{text[:500]}")
 
 
@@ -374,12 +388,15 @@ async def generate_card(req: GenerateRequest):
         system=GENERATION_SYSTEM,
         api_key=api_key,
         temperature=0.7,
-        max_tokens=30000,
+        max_tokens=100000,
         timeout=GENERATION_TIMEOUT,
         model=req.model,
     )
 
-    card = finalize_card(extract_json(raw))
+    try:
+        card = finalize_card(extract_json(raw))
+    except ValueError as e:
+        raise HTTPException(500, str(e))
     session["generated_card"] = card
     return {"card": card}
 
@@ -420,12 +437,15 @@ async def regenerate_card(req: RegenerateRequest):
         system=GENERATION_SYSTEM,
         api_key=api_key,
         temperature=0.75,
-        max_tokens=30000,
+        max_tokens=100000,
         timeout=GENERATION_TIMEOUT,
         model=req.model,
     )
 
-    card = finalize_card(extract_json(raw))
+    try:
+        card = finalize_card(extract_json(raw))
+    except ValueError as e:
+        raise HTTPException(500, str(e))
     session["generated_card"] = card
     return {"card": card}
 

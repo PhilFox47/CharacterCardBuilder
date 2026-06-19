@@ -25,6 +25,18 @@ load_dotenv()
 app = FastAPI(title="Character Card Builder")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
+@app.middleware("http")
+async def no_cache_static(request, call_next):
+    """Stop the browser caching app.js / index.html so model/UI fixes apply immediately."""
+    response = await call_next(request)
+    if request.url.path.startswith("/static") or request.url.path == "/":
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 sessions: Dict[str, dict] = {}
 
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
@@ -165,6 +177,7 @@ async def call_api(
     model: Optional[str] = None,
 ) -> str:
     resolved_model = model or get_model()
+    print(f"[call_api] requesting model={resolved_model!r}", flush=True)
     payload = {
         "model": resolved_model,
         "messages": [{"role": "system", "content": system}] + messages,
@@ -198,6 +211,7 @@ async def call_api(
         raise HTTPException(resp.status_code, f"Nano-GPT API error: {resp.text}")
 
     data = resp.json()
+    print(f"[call_api] response reports model={data.get('model')!r}", flush=True)
     content = data["choices"][0]["message"]["content"]
     return strip_thinking(content)
 

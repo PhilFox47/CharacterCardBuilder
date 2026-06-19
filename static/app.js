@@ -1,12 +1,13 @@
 /* ── State ───────────────────────────────────────────────── */
 const state = {
-  sessionId: null,
-  cardType:  'single',
-  apiKey:    localStorage.getItem('nano_api_key') || '',
-  card:      null,
-  loading:   false,
-  activeTab: 'preview',
-  isEdit:    false,   // true when editing an imported card
+  sessionId:    null,
+  cardType:     'single',
+  apiKey:       localStorage.getItem('nano_api_key') || '',
+  model:        localStorage.getItem('nano_model') || '',   // empty = use server default
+  card:         null,
+  loading:      false,
+  activeTab:    'preview',
+  isEdit:       false,   // true when editing an imported card
 };
 
 /* ── DOM refs ────────────────────────────────────────────── */
@@ -51,13 +52,18 @@ const toastCont      = $('toastContainer');
 
 /* ── Init ────────────────────────────────────────────────── */
 async function init() {
-  // Check if server has a key configured
+  // Check if server has a key configured; get server default model
   try {
     const cfg = await apiFetch('/api/config', 'GET');
     if (cfg.has_server_key) {
       apiKeyRow.style.display = 'none'; // key is on server
     }
-    settingsModel.value = cfg.model || 'xiaomi/mimo-v2.5-pro:thinking';
+    // Show saved model override if set, otherwise show server default as placeholder
+    if (state.model) {
+      settingsModel.value = state.model;
+    } else {
+      settingsModel.placeholder = cfg.model || 'xiaomi/mimo-v2.5-pro:thinking';
+    }
   } catch (_) {}
 
   // Restore saved key into setup field
@@ -133,6 +139,11 @@ async function apiFetch(path, method = 'POST', body = null) {
 
 function getApiKey() {
   return setupApiKey.value.trim() || settingsApiKey.value.trim() || state.apiKey || undefined;
+}
+
+function getModel() {
+  // Return the locally-saved model override, or undefined to use server default
+  return settingsModel.value.trim() || state.model || undefined;
 }
 
 /* ── Loading ─────────────────────────────────────────────── */
@@ -228,6 +239,7 @@ async function startSession() {
     const res = await apiFetch('/api/start', 'POST', {
       card_type: state.cardType,
       api_key: apiKey || null,
+      model: getModel() || null,
     });
 
     state.sessionId = res.session_id;
@@ -264,6 +276,7 @@ async function importCard(apiKey) {
     const res = await apiFetch('/api/import', 'POST', {
       card_json: raw,
       api_key: apiKey || null,
+      model: getModel() || null,
     });
 
     state.sessionId = res.session_id;
@@ -334,6 +347,7 @@ async function sendMessage() {
       session_id: state.sessionId,
       message: text,
       api_key: getApiKey() || null,
+      model: getModel() || null,
     });
 
     removeTypingIndicator();
@@ -376,6 +390,7 @@ async function generateCard(mode = null) {
       session_id: state.sessionId,
       api_key: getApiKey() || null,
       mode: mode,
+      model: getModel() || null,
     });
 
     clearInterval(timerInterval);
@@ -417,6 +432,7 @@ async function regenerateCard() {
       session_id: state.sessionId,
       feedback: feedback || null,
       api_key: getApiKey() || null,
+      model: getModel() || null,
     });
 
     clearInterval(timerInterval);
@@ -518,6 +534,13 @@ function saveSettingsHandler() {
     state.apiKey = key;
     setupApiKey.value = key;
     localStorage.setItem('nano_api_key', key);
+  }
+  const model = settingsModel.value.trim();
+  state.model = model;
+  if (model) {
+    localStorage.setItem('nano_model', model);
+  } else {
+    localStorage.removeItem('nano_model');
   }
   settingsDrawer.classList.remove('open');
   toast('Settings saved.', 'success');

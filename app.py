@@ -38,25 +38,30 @@ GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "1200"))  # 20 min de
 class StartRequest(BaseModel):
     card_type: str          # "single" | "group" | "scenario"
     api_key: Optional[str] = None
+    model: Optional[str] = None
 
 class ChatRequest(BaseModel):
     session_id: str
     message: str
     api_key: Optional[str] = None
+    model: Optional[str] = None
 
 class GenerateRequest(BaseModel):
     session_id: str
     api_key: Optional[str] = None
     mode: Optional[str] = None  # None | "edit" | "overhaul" (for imported cards)
+    model: Optional[str] = None
 
 class RegenerateRequest(BaseModel):
     session_id: str
     feedback: Optional[str] = None
     api_key: Optional[str] = None
+    model: Optional[str] = None
 
 class ImportRequest(BaseModel):
     card_json: str          # raw JSON text the user pasted/uploaded
     api_key: Optional[str] = None
+    model: Optional[str] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -152,9 +157,10 @@ async def call_api(
     temperature: float = 0.8,
     max_tokens: int = 6000,
     timeout: float = 300.0,
+    model: Optional[str] = None,
 ) -> str:
     payload = {
-        "model": MODEL,
+        "model": model or MODEL,
         "messages": [{"role": "system", "content": system}] + messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -228,7 +234,8 @@ async def start_session(req: StartRequest):
         system=CLARIFICATION_SYSTEM[req.card_type],
         api_key=api_key,
         temperature=0.85,
-        max_tokens=800,
+        max_tokens=1000,
+        model=req.model,
     )
 
     sessions[session_id]["messages"].append({"role": "assistant", "content": initial})
@@ -258,7 +265,8 @@ async def chat(req: ChatRequest):
         system=system,
         api_key=api_key,
         temperature=0.85,
-        max_tokens=1000,
+        max_tokens=2500,
+        model=req.model,
     )
 
     session["messages"].append({"role": "assistant", "content": response})
@@ -297,7 +305,8 @@ async def import_card(req: ImportRequest):
         system=system,
         api_key=api_key,
         temperature=0.7,
-        max_tokens=1200,
+        max_tokens=1500,
+        model=req.model,
     )
 
     sessions[session_id]["messages"].append({"role": "assistant", "content": initial})
@@ -347,6 +356,7 @@ async def generate_card(req: GenerateRequest):
         temperature=0.7,
         max_tokens=8000,
         timeout=GENERATION_TIMEOUT,
+        model=req.model,
     )
 
     card = finalize_card(extract_json(raw))
@@ -392,6 +402,7 @@ async def regenerate_card(req: RegenerateRequest):
         temperature=0.75,
         max_tokens=8000,
         timeout=GENERATION_TIMEOUT,
+        model=req.model,
     )
 
     card = finalize_card(extract_json(raw))

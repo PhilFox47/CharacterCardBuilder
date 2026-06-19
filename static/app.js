@@ -58,12 +58,10 @@ async function init() {
     if (cfg.has_server_key) {
       apiKeyRow.style.display = 'none'; // key is on server
     }
-    // Show saved model override if set, otherwise show server default as placeholder
-    if (state.model) {
-      settingsModel.value = state.model;
-    } else {
-      settingsModel.placeholder = cfg.model || 'xiaomi/mimo-v2.5-pro:thinking';
-    }
+    // Always set an explicit value: saved override first, then server default.
+    // This ensures getModel() always returns something and the model is always
+    // sent explicitly in every API request — no silent fallback to a stale server default.
+    settingsModel.value = state.model || cfg.model || 'xiaomi/mimo-v2.5-pro:thinking';
   } catch (_) {}
 
   // Restore saved key into setup field

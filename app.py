@@ -29,8 +29,13 @@ sessions: Dict[str, dict] = {}
 
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
-MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
+DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
 GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "1200"))  # 20 min default
+
+
+def get_model() -> str:
+    """Read model from env each time so changes don't require a server restart."""
+    return os.getenv("NANO_GPT_MODEL", DEFAULT_MODEL)
 
 
 # ── Request models ────────────────────────────────────────────────────────────
@@ -159,8 +164,9 @@ async def call_api(
     timeout: float = 300.0,
     model: Optional[str] = None,
 ) -> str:
+    resolved_model = model or get_model()
     payload = {
-        "model": model or MODEL,
+        "model": resolved_model,
         "messages": [{"role": "system", "content": system}] + messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -207,7 +213,7 @@ async def root():
 @app.get("/api/config")
 async def get_config():
     """Tell the frontend whether a server-side API key is configured."""
-    return {"has_server_key": bool(DEFAULT_API_KEY), "model": MODEL}
+    return {"has_server_key": bool(DEFAULT_API_KEY), "model": get_model()}
 
 
 @app.post("/api/start")

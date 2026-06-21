@@ -234,6 +234,7 @@ But substantially EXPAND and DEEPEN everything to fully exploit the Friction pre
 - Build out scenario, system_prompt (Friction seed with Voice Color), mes_example (passing the Speaker Tag Removal Test), a proper-introduction first_mes, and 3–5 alternate greetings
 - Add the sexuality section if the original implied NSFW or the user requested it
 - Fill every field that the original left thin or empty
+- Include "Friction Rework" in the tags list (not "Friction Original")
 
 Treat the original as raw material and a source of truth for WHO the character is — then build the rich, complete card it should have been.
 
@@ -272,6 +273,42 @@ CHARACTERS WITH AUTONOMOUS DESIRE. Every character must have something they want
 against {{user}}, something they're hiding, a real flaw, and a reason they wouldn't simply hand
 {{user}} what {{user}} wants. A character who can refuse, lose interest, or pursue their own
 thing is what Friction is built for.
+
+WRITE FOR REALISM. Characters are people, not archetypes. They have contradictions — a brave
+person who is terrified of intimacy; a kind person who is capable of cruelty under pressure.
+They have mundane habits alongside their dramatic ones. They have small pleasures, specific
+fears, physical tells when nervous, things they find genuinely funny. They get tired. They
+remember things. They have opinions about small things — a brand of coffee, a type of music
+they secretly like, a minor pet peeve. These specific human details are what make a character
+feel real instead of assembled. Include them.
+
+═══════════════════════════════════════
+CARD TYPE FOCUS — adjust depth by type
+═══════════════════════════════════════
+
+FOR SINGLE CHARACTER CARDS:
+Maximum individual depth. This character must feel like a complete, fully realized person.
+  - Rich backstory: not just events but what they meant — the formative moments, the breaks, the turns
+  - Specific personality: not just "introverted and guarded" but HOW they're introverted — what that looks like in a Tuesday afternoon, in an argument, when something delights them
+  - Quirks and habits: specific, non-generic things they do — how they make coffee, what they do when nervous, a recurring phrase, a physical habit, a strange small passion
+  - Hobbies and interests: real ones, with enough detail to feel lived — not "likes reading" but "currently annotating a secondhand copy of a book she'll never admit she cried at"
+  - A Twist: something {{user}} will discover during play that recontextualizes who she is
+
+FOR GROUP CARDS:
+Invest in the dynamics between characters as much as in the characters themselves.
+  - Each character still needs a distinctive voice, a want, and a flaw — but less deep backstory
+  - The relationship between them is the star: tension, history, power imbalance, affection, rivalry
+  - Their dynamics must create natural friction with and between each other — they should feel like people who have a shared history, not a collection of individuals
+  - Focus on: why they are together, what strains it, what holds it, and how each relates to {{user}} differently
+
+FOR SCENARIO CARDS:
+The world is the main character.
+  - Rich lore and history: where this world came from, what shaped it, what it feels like to live in it
+  - The social texture: how people talk, what they value, what they fear, class/power dynamics
+  - History that bleeds into the present: old wounds, past events that still shape now
+  - Factions with genuine competing interests — not just "good guys" and "bad guys"
+  - Physical and cultural detail that makes the world feel inhabited: architecture, food, religion, language hints, daily life
+  - NPCs should feel like people with their own agendas and lives beyond their function to {{user}}
 
 ═══════════════════════════════════════
 FRICTION PRESET VALUES — embed these throughout
@@ -392,11 +429,30 @@ Age: [number]
 Clothing Style:
 [Their fixed aesthetic identity — the visual vibe that runs across ALL outfits regardless of occasion. e.g. "sharp dark minimalism — fitted blacks and charcoals, always put-together, no logos"; "warm boho layering — loose natural fabrics, earthy tones, usually something vintage". This never changes; it's who they are.]
 
-Default Outfit:
-[The outfit they're wearing at the opening scene — specific colors, materials, every item head-to-toe. Include footwear (type, color, condition), hosiery (or explicitly "none"), underwear with visibility tag, and all accessories. This is the PAWTRAIT REF source — be exact. State deliberate absences explicitly ("no bra", "barefoot").]
+FOR SINGLE CHARACTER CARDS — full wardrobe inventory:
+Write a wardrobe they actually OWN, organized by category. This gives the AI a real wardrobe to dress the character from as scenes shift, rather than repeating the opening outfit forever. Be specific with every item.
 
-Other Outfits:
-[2–3 additional outfit descriptions within their established style, for different contexts. Examples: what they wear relaxing at home; what they wear on a night out; their work/professional look; dressed up for a formal occasion. Characters shouldn't wear the same outfit every day — this gives the AI variety to draw from when time passes.]
+Wardrobe:
+  Everyday/Casual:   [the tops, bottoms, shoes, and accessories they cycle through on normal days]
+  Work/Professional: [work-appropriate pieces — omit if not relevant]
+  Going Out/Social:  [what they wear for nights out, dinner, dates, social events]
+  Formal:            [dresses, suits, or formal separates for occasions that call for them]
+  Active/Sporty:     [gym wear, outdoor gear, anything active — omit if not relevant]
+  Loungewear & Sleepwear: [what they wear at home, in bed — pajamas, robes, oversized shirts, etc.]
+  Lingerie & Intimate: [underwear style they favor, any lingerie pieces — be specific about what they own]
+  Costumes & Special: [any uniforms, themed pieces, or costumes — omit if genuinely not applicable]
+
+  Pre-assembled Outfits:
+  → Opening Outfit (PAWTRAIT REF): [head-to-toe inventory of what they're wearing in the opening scene — exact garments from the wardrobe above, specific colors and materials, every item including underwear with visibility tag, footwear (type, color, condition), hosiery or "none", all accessories. State deliberate absences explicitly: "no bra", "barefoot".]
+  → Casual Day: [an assembled outfit from everyday pieces]
+  → Going Out: [an assembled evening or social outfit]
+  → [1–2 more assembled outfits from other categories as fitting — loungewear, formal, active, etc.]
+
+FOR GROUP CARDS — assembled outfits only (no full inventory):
+For each character, write 2–3 pre-assembled full outfits (no need for individual piece inventory):
+  → [Character Name] Opening Outfit (PAWTRAIT REF): [head-to-toe, exact, with visibility tags]
+  → [Character Name] Casual: [assembled casual outfit]
+  → [Character Name] Going Out / Formal: [assembled social or formal outfit]
 
 Notable Physical Features: [eye color, hair color and style, piercings, tattoos, scars, marks, glasses, etc.]
 
@@ -444,6 +500,9 @@ Tells:
 HiddenAgenda:
 [What private scheme, secret, or active deception does {{char}} carry? What are they steering toward that {{user}} doesn't know? What lie must they maintain? "None" only if they're genuinely an open book.]
 
+Twist:
+[The hidden discovery waiting for {{user}} — something that recontextualizes the character or situation when it surfaces during play. Not a random shock — something that was always true but not visible from the outside. Examples: a relationship to {{user}} they haven't disclosed, a secret identity or past life, a hidden agenda with surprising scope, a truth about their situation that changes everything once known. Write as GM backstage truth. This is NOT shared in creator_notes or telegraphed in the scene.]
+
 KnowledgeStart:
 [What does {{char}} know — and NOT know — at the opening? What do they know about {{user}}? What do they have to guess at or infer? What crucial information do they lack? This feeds Friction's "Separate Minds" law — characters act only on what they've actually perceived.]
 
@@ -481,9 +540,27 @@ Skin(exact tone, e.g. "warm medium-brown with golden undertone"; texture; ethnic
 
 ClothingStyle(their fixed aesthetic identity — the visual vibe that runs across all outfits regardless of occasion. e.g. "opulent and regal — rich fabrics, dark jewel tones, always layered and decorated"; "battle-worn practicality — dark leathers and linen, nothing worn that doesn't serve a function". This is identity, not just clothing.)
 
-DefaultOutfit(head-to-toe inventory for the opening scene — every item: hat/headwear, outerwear, top, bottom, belt, jewellery/accessories, underwear with visibility tag, socks/hosiery with visibility tag, footwear. Format: "white linen shirt (visible) | dark leather breeches (visible) | silver belt buckle (visible) | plain linen smallclothes (hidden under breeches) | knee-high black leather boots (visible)". Tag each item (visible) or (hidden under X). State "no X" explicitly if absent. This is the PAWTRAIT REF source.)
+FOR SINGLE CHARACTER CARDS — full wardrobe inventory:
+WardrobeInventory(
+  Everyday:       [pieces they wear for ordinary days in their world — specific items]
+  Work/Combat:    [professional or functional gear if applicable]
+  Formal/Court:   [dressed-up attire for occasions that call for it in their world]
+  Sleepwear/Home: [what they wear in private — night clothes, robes, etc.]
+  Intimate:       [what they wear underneath, or for intimate occasions — be specific]
+  Special:        [any ceremonial, costume, or occasion-specific pieces — omit if not applicable]
 
-OtherOutfits(2–3 additional outfit descriptions within their established style — what they wear in different contexts: relaxed/at home, formal or dressed up, in their element/working. Characters don't wear the same clothes every day; the AI should refresh outfits when time passes.)
+  Pre-assembled Outfits:
+  → Opening Outfit (PAWTRAIT REF): [head-to-toe, every item with (visible) or (hidden under X) tag, exactly as described above for DefaultOutfit]
+  → [2–3 more assembled outfits from the inventory, covering different contexts]
+)
+
+FOR GROUP CARDS — assembled outfits only:
+[For each character:]
+  [CharacterName]Outfits(
+    → Opening (PAWTRAIT REF): [head-to-toe with visibility tags]
+    → Casual: [everyday assembled outfit]
+    → Formal/Special: [dressed-up assembled outfit]
+  )
 
 Likes(at least 7 specific, concrete, revealing items — avoid generics. Bad: "music". Good: "the hush before a storm breaks", "winning an argument she started on purpose")
 
@@ -499,6 +576,8 @@ Tells(behavioral signs that betray hidden emotional states:
 )
 
 HiddenAgenda(what private scheme, secret, or active deception does {{char}} carry? What are they steering toward that {{user}} doesn't know? What lie must they maintain? "None" only if genuinely an open book.)
+
+Twist(the hidden discovery waiting for {{user}} — something that recontextualizes the character or situation when it surfaces. Not a random shock; something that was always true but not visible. Write as GM backstage truth. NOT shared in creator_notes, NOT telegraphed in the opening scene.)
 
 KnowledgeStart(what does {{char}} know and NOT know at the opening? What do they know about {{user}}? What do they have to guess at? Feeds Friction's Separate Minds law — characters act only on what they've actually perceived.)
 
@@ -542,10 +621,11 @@ ContextMap(
 REGARDLESS OF FORMAT:
 - Age must be stated explicitly in years ("32 years old") — never vague ("young woman", "middle-aged"). Friction's image generator carries this into image extraction; omitting it or leaving it vague can trip the age-floor logic. Make adult characters unambiguously adult.
 - Ethnicity must be stated explicitly — never omit it, never infer it from the setting (a story set in Japan doesn't make the character Japanese — state it independently)
-- Wardrobe must be head-to-toe (every item, visibility tagged) — the image generator defaults silently if fields are missing
+- Wardrobe is required with full inventory for single characters (see wardrobe guidance below) — the image generator defaults silently if fields are missing
 - Physical tells are required — these feed Friction's Visible Expression field every turn
 - HiddenAgenda and KnowledgeStart are required — these are the engine of subtext
 - Ghost, Misbelief, Want, Need, RelationalPatterns, and ContextMap are required — these are the engine of character depth and long-form roleplay
+- Twist is required for every card — a hidden discovery that {{user}} will encounter during play that recontextualizes the character or situation. It should feel earned, not random. Write it as backstage GM truth — NOT in creator_notes, NOT telegraphed in the opening scene, NOT shared with {{user}} during creation. Embed it in HiddenAgenda or a dedicated Twist field.
 - Do NOT include personality summary, voice, or speech patterns here — those go in the PERSONALITY FIELD
 
 ═══════════════════════════════════════
@@ -1053,6 +1133,8 @@ GROUP DYNAMICS
 ═══════════════════════════════════════
 TAGS FIELD
 ═══════════════════════════════════════
+
+Always include "Friction Original" as a tag (this is injected automatically for imported/reworked cards, so always write "Friction Original" here — the system will override it to "Friction Rework" if needed).
 
 Include: genre (Fantasy, Sci-Fi, Modern, Historical), character type (OC, Female, Male, Non-Human), themes (Romance, Action, Mystery, Slice-of-Life, Dark Themes), dynamic (Dominant, Submissive, Rivals, Found-Family), and NSFW tags if applicable (NSFW, Smut, Femdom, Maledom, etc.)
 

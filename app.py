@@ -397,6 +397,15 @@ async def generate_card(req: GenerateRequest):
         card = finalize_card(extract_json(raw))
     except ValueError as e:
         raise HTTPException(500, str(e))
+
+    # Inject origin tag
+    origin_tag = "Friction Rework" if (session.get("imported_card") is not None or req.mode in ("edit", "overhaul")) else "Friction Original"
+    if isinstance(card.get("data"), dict):
+        tags = card["data"].setdefault("tags", [])
+        if not any("Friction" in t for t in tags):
+            tags.append(origin_tag)
+        card["tags"] = card["data"]["tags"]
+
     session["generated_card"] = card
     return {"card": card}
 
@@ -446,6 +455,15 @@ async def regenerate_card(req: RegenerateRequest):
         card = finalize_card(extract_json(raw))
     except ValueError as e:
         raise HTTPException(500, str(e))
+
+    # Inject origin tag (regenerate always keeps the session's type)
+    origin_tag = "Friction Rework" if session.get("imported_card") is not None else "Friction Original"
+    if isinstance(card.get("data"), dict):
+        tags = card["data"].setdefault("tags", [])
+        if not any("Friction" in t for t in tags):
+            tags.append(origin_tag)
+        card["tags"] = card["data"]["tags"]
+
     session["generated_card"] = card
     return {"card": card}
 

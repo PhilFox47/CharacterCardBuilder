@@ -366,49 +366,6 @@ async function sendMessage() {
 }
 
 /* ── Card generation ─────────────────────────────────────── */
-
-// Streams a generation request via SSE, returning the card on success.
-// Sends periodic progress events to keep any intermediate proxies alive.
-async function streamCardGeneration(url, body, onProgress) {
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-    throw new Error(err.detail || `HTTP ${resp.status}`);
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split('\n');
-    buffer = lines.pop(); // keep the trailing incomplete line
-
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (data === '[DONE]') return null;
-
-      let event;
-      try { event = JSON.parse(data); } catch (e) { continue; }
-
-      if (event.type === 'card') return event.card;
-      if (event.type === 'error') throw new Error(event.message);
-      if (event.type === 'progress' && onProgress) onProgress(event.chars);
-    }
-  }
-
-  throw new Error('Generation ended without a card response.');
-}
-
 async function generateCard(mode = null) {
   if (!state.sessionId || state.loading) return;
 
@@ -419,6 +376,7 @@ async function generateCard(mode = null) {
   setLoading(true);
   addTypingIndicator();
 
+  // Show elapsed time so the user knows it hasn't frozen
   const startTime = Date.now();
   const timerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -426,16 +384,17 @@ async function generateCard(mode = null) {
   }, 1000);
 
   try {
-    const card = await streamCardGeneration(
-      '/api/generate',
-      { session_id: state.sessionId, api_key: getApiKey() || null, mode, model: getModel() || null },
-      (chars) => { /* chars received so far — could display if desired */ }
-    );
+    const res = await apiFetch('/api/generate', 'POST', {
+      session_id: state.sessionId,
+      api_key: getApiKey() || null,
+      mode: mode,
+      model: getModel() || null,
+    });
 
     clearInterval(timerInterval);
     removeTypingIndicator();
-    state.card = card;
-    renderCard(card);
+    state.card = res.card;
+    renderCard(res.card);
     addMessage('assistant', `✅ Your character card is ${noun}! You can preview it in the panel or download the JSON to import into SillyTavern.`);
     chatStatus.textContent = 'Card ready!';
     toast(`Card ${noun} successfully!`, 'success');
@@ -467,16 +426,17 @@ async function regenerateCard() {
   }, 1000);
 
   try {
-    const card = await streamCardGeneration(
-      '/api/regenerate',
-      { session_id: state.sessionId, feedback: feedback || null, api_key: getApiKey() || null, model: getModel() || null },
-      null
-    );
+    const res = await apiFetch('/api/regenerate', 'POST', {
+      session_id: state.sessionId,
+      feedback: feedback || null,
+      api_key: getApiKey() || null,
+      model: getModel() || null,
+    });
 
     clearInterval(timerInterval);
     removeTypingIndicator();
-    state.card = card;
-    renderCard(card);
+    state.card = res.card;
+    renderCard(res.card);
     addMessage('assistant', '✅ Card regenerated! Check the preview panel.');
     chatStatus.textContent = 'Card generated!';
     toast('Card regenerated!', 'success');

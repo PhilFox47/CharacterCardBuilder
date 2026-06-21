@@ -42,7 +42,7 @@ sessions: Dict[str, dict] = {}
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
-GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "1200"))  # 20 min default
+GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min default
 
 
 def get_model() -> str:

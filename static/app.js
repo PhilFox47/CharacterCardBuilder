@@ -366,6 +366,28 @@ async function sendMessage() {
 }
 
 /* ── Card generation ─────────────────────────────────────── */
+
+// Poll /api/job/:id until done or error. Returns the card on success.
+// Each poll request is a short GET — no long-lived connection, no proxy timeout.
+async function pollJob(jobId) {
+  let failures = 0;
+  while (true) {
+    await new Promise(r => setTimeout(r, 6000));
+    let job;
+    try {
+      job = await apiFetch(`/api/job/${jobId}`, 'GET');
+      failures = 0;
+    } catch (err) {
+      // Tolerate transient network blips — give up after 3 consecutive failures
+      if (++failures >= 3) throw new Error(`Lost contact with the server: ${err.message}`);
+      continue;
+    }
+    if (job.status === 'done') return job.card;
+    if (job.status === 'error') throw new Error(job.error);
+    // 'pending' or 'running' → keep polling
+  }
+}
+
 async function generateCard(mode = null) {
   if (!state.sessionId || state.loading) return;
 
@@ -376,7 +398,6 @@ async function generateCard(mode = null) {
   setLoading(true);
   addTypingIndicator();
 
-  // Show elapsed time so the user knows it hasn't frozen
   const startTime = Date.now();
   const timerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -384,17 +405,21 @@ async function generateCard(mode = null) {
   }, 1000);
 
   try {
-    const res = await apiFetch('/api/generate', 'POST', {
+    // This POST returns a job_id immediately — no long wait, no proxy timeout.
+    const { job_id } = await apiFetch('/api/generate', 'POST', {
       session_id: state.sessionId,
       api_key: getApiKey() || null,
       mode: mode,
       model: getModel() || null,
     });
 
+    // Poll until the background job finishes.
+    const card = await pollJob(job_id);
+
     clearInterval(timerInterval);
     removeTypingIndicator();
-    state.card = res.card;
-    renderCard(res.card);
+    state.card = card;
+    renderCard(card);
     addMessage('assistant', `✅ Your character card is ${noun}! You can preview it in the panel or download the JSON to import into SillyTavern.`);
     chatStatus.textContent = 'Card ready!';
     toast(`Card ${noun} successfully!`, 'success');
@@ -426,17 +451,19 @@ async function regenerateCard() {
   }, 1000);
 
   try {
-    const res = await apiFetch('/api/regenerate', 'POST', {
+    const { job_id } = await apiFetch('/api/regenerate', 'POST', {
       session_id: state.sessionId,
       feedback: feedback || null,
       api_key: getApiKey() || null,
       model: getModel() || null,
     });
 
+    const card = await pollJob(job_id);
+
     clearInterval(timerInterval);
     removeTypingIndicator();
-    state.card = res.card;
-    renderCard(res.card);
+    state.card = card;
+    renderCard(card);
     addMessage('assistant', '✅ Card regenerated! Check the preview panel.');
     chatStatus.textContent = 'Card generated!';
     toast('Card regenerated!', 'success');

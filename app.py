@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from typing import Optional, Dict, AsyncIterator
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -26,6 +26,7 @@ app = FastAPI(title="Character Card Builder")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 sessions: Dict[str, dict] = {}
+jobs: Dict[str, dict] = {}   # job_id → {status, card?, error?}
 
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
@@ -314,6 +315,44 @@ async def call_api_collect(
     return strip_thinking(full_text)
 
 
+async def _run_generation_job(
+    job_id: str,
+    gen_prompt: str,
+    api_key: str,
+    req_model: Optional[str],
+    session: dict,
+    origin_tag: str,
+    temperature: float,
+) -> None:
+    """Background task: stream from Nano-GPT, process the card, store result in jobs[]."""
+    jobs[job_id] = {"status": "running"}
+    try:
+        raw = await call_api_collect(
+            messages=[{"role": "user", "content": gen_prompt}],
+            system=GENERATION_SYSTEM,
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=50000,
+            timeout=GENERATION_TIMEOUT,
+            model=req_model,
+        )
+        card = finalize_card(extract_json(raw))
+        if isinstance(card.get("data"), dict):
+            tags = card["data"].setdefault("tags", [])
+            if not any("Friction" in t for t in tags):
+                tags.append(origin_tag)
+            card["tags"] = card["data"]["tags"]
+        session["generated_card"] = card
+        jobs[job_id] = {"status": "done", "card": card}
+    except HTTPException as e:
+        jobs[job_id] = {"status": "error", "error": e.detail}
+    except ValueError as e:
+        jobs[job_id] = {"status": "error", "error": str(e)}
+    except Exception as e:
+        print(f"[job {job_id}] unexpected error: {e}", flush=True)
+        jobs[job_id] = {"status": "error", "error": str(e)}
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -435,7 +474,7 @@ async def import_card(req: ImportRequest):
 
 
 @app.post("/api/generate")
-async def generate_card(req: GenerateRequest):
+async def generate_card(req: GenerateRequest, background_tasks: BackgroundTasks):
     if req.session_id not in sessions:
         raise HTTPException(404, "Session not found")
 
@@ -469,35 +508,17 @@ async def generate_card(req: GenerateRequest):
             f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    raw = await call_api_collect(
-        messages=[{"role": "user", "content": gen_prompt}],
-        system=GENERATION_SYSTEM,
-        api_key=api_key,
-        temperature=0.7,
-        max_tokens=50000,
-        timeout=GENERATION_TIMEOUT,
-        model=req.model,
-    )
-
-    try:
-        card = finalize_card(extract_json(raw))
-    except ValueError as e:
-        raise HTTPException(500, str(e))
-
-    # Inject origin tag
     origin_tag = "Friction Rework" if (imported is not None or req.mode in ("edit", "overhaul")) else "Friction Original"
-    if isinstance(card.get("data"), dict):
-        tags = card["data"].setdefault("tags", [])
-        if not any("Friction" in t for t in tags):
-            tags.append(origin_tag)
-        card["tags"] = card["data"]["tags"]
-
-    session["generated_card"] = card
-    return {"card": card}
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
+    background_tasks.add_task(
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.7
+    )
+    return {"job_id": job_id}
 
 
 @app.post("/api/regenerate")
-async def regenerate_card(req: RegenerateRequest):
+async def regenerate_card(req: RegenerateRequest, background_tasks: BackgroundTasks):
     if req.session_id not in sessions:
         raise HTTPException(404, "Session not found")
 
@@ -526,31 +547,20 @@ async def regenerate_card(req: RegenerateRequest):
             f"Generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    raw = await call_api_collect(
-        messages=[{"role": "user", "content": gen_prompt}],
-        system=GENERATION_SYSTEM,
-        api_key=api_key,
-        temperature=0.75,
-        max_tokens=50000,
-        timeout=GENERATION_TIMEOUT,
-        model=req.model,
-    )
-
-    try:
-        card = finalize_card(extract_json(raw))
-    except ValueError as e:
-        raise HTTPException(500, str(e))
-
-    # Inject origin tag (regenerate always keeps the session's type)
     origin_tag = "Friction Rework" if imported is not None else "Friction Original"
-    if isinstance(card.get("data"), dict):
-        tags = card["data"].setdefault("tags", [])
-        if not any("Friction" in t for t in tags):
-            tags.append(origin_tag)
-        card["tags"] = card["data"]["tags"]
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
+    background_tasks.add_task(
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.75
+    )
+    return {"job_id": job_id}
 
-    session["generated_card"] = card
-    return {"card": card}
+
+@app.get("/api/job/{job_id}")
+async def get_job(job_id: str):
+    if job_id not in jobs:
+        raise HTTPException(404, "Job not found")
+    return jobs[job_id]
 
 
 @app.get("/api/session/{session_id}")

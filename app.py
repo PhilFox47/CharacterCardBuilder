@@ -2,12 +2,13 @@ import os
 import uuid
 import json
 import re
+import time
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, AsyncIterator
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 import httpx
 from dotenv import load_dotenv
@@ -210,12 +211,80 @@ async def call_api(
         raise HTTPException(502, f"Network error reaching Nano-GPT: {e}")
 
     if resp.status_code != 200:
-        raise HTTPException(resp.status_code, f"Nano-GPT API error: {resp.text}")
+        print(f"[call_api] Nano-GPT error {resp.status_code}: {resp.text[:500]}", flush=True)
+        raise HTTPException(resp.status_code, f"Nano-GPT API error ({resp.status_code}): {resp.text[:300]}")
 
     data = resp.json()
     print(f"[call_api] response reports model={data.get('model')!r}", flush=True)
     content = data["choices"][0]["message"]["content"]
     return strip_thinking(content)
+
+
+async def call_api_streaming(
+    messages: list,
+    system: str,
+    api_key: str,
+    temperature: float = 0.8,
+    max_tokens: int = 50000,
+    timeout: float = 3600.0,
+    model: Optional[str] = None,
+) -> AsyncIterator[str]:
+    """Async generator yielding text chunks from Nano-GPT's streaming API.
+
+    Streaming keeps the HTTP connection alive so intermediate proxies don't
+    timeout while a thinking model reasons before producing output.
+    """
+    resolved_model = model or get_model()
+    print(f"[call_api_streaming] requesting model={resolved_model!r}", flush=True)
+    payload = {
+        "model": resolved_model,
+        "messages": [{"role": "system", "content": system}] + messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": True,
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(timeout, connect=15.0)
+        ) as client:
+            async with client.stream(
+                "POST",
+                f"{NANO_GPT_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            ) as resp:
+                if resp.status_code != 200:
+                    body = await resp.aread()
+                    body_text = body.decode("utf-8", errors="replace")
+                    print(f"[call_api_streaming] Nano-GPT error {resp.status_code}: {body_text[:500]}", flush=True)
+                    raise HTTPException(
+                        resp.status_code,
+                        f"Nano-GPT API error ({resp.status_code}): {body_text[:300]}"
+                    )
+                async for line in resp.aiter_lines():
+                    if line.startswith("data: "):
+                        chunk = line[6:].strip()
+                        if chunk == "[DONE]":
+                            return
+                        try:
+                            data = json.loads(chunk)
+                            delta = data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                yield delta
+                        except (json.JSONDecodeError, KeyError, IndexError):
+                            pass
+    except httpx.TimeoutException:
+        raise HTTPException(
+            504,
+            f"The model took too long to respond (>{int(timeout)}s). "
+            "Try again — thinking models can be slow on large requests."
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(502, f"Network error reaching Nano-GPT: {e}")
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -350,7 +419,6 @@ async def generate_card(req: GenerateRequest):
     convo_text = convo_to_text(session["messages"])
 
     if imported is not None:
-        # Editing/overhauling an imported card.
         card_json = json.dumps(imported.get("data", imported), ensure_ascii=False, indent=2)
         instruction = OVERHAUL_INSTRUCTION if req.mode == "overhaul" else EDIT_INSTRUCTION
         if req.mode != "overhaul" and len(session["messages"]) < 2:
@@ -374,31 +442,59 @@ async def generate_card(req: GenerateRequest):
             f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    raw = await call_api(
-        messages=[{"role": "user", "content": gen_prompt}],
-        system=GENERATION_SYSTEM,
-        api_key=api_key,
-        temperature=0.7,
-        max_tokens=100000,
-        timeout=GENERATION_TIMEOUT,
-        model=req.model,
+    origin_tag = "Friction Rework" if (imported is not None or req.mode in ("edit", "overhaul")) else "Friction Original"
+    req_model = req.model
+
+    async def event_stream():
+        full_text = ""
+        last_ping = time.monotonic()
+        try:
+            async for chunk in call_api_streaming(
+                messages=[{"role": "user", "content": gen_prompt}],
+                system=GENERATION_SYSTEM,
+                api_key=api_key,
+                temperature=0.7,
+                max_tokens=50000,
+                timeout=GENERATION_TIMEOUT,
+                model=req_model,
+            ):
+                full_text += chunk
+                now = time.monotonic()
+                if now - last_ping >= 5:
+                    yield f"data: {json.dumps({'type': 'progress', 'chars': len(full_text)})}\n\n"
+                    last_ping = now
+
+            print(f"[generate] stream complete, {len(full_text)} chars", flush=True)
+
+            try:
+                card = finalize_card(extract_json(full_text))
+            except ValueError as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            if isinstance(card.get("data"), dict):
+                tags = card["data"].setdefault("tags", [])
+                if not any("Friction" in t for t in tags):
+                    tags.append(origin_tag)
+                card["tags"] = card["data"]["tags"]
+
+            session["generated_card"] = card
+            yield f"data: {json.dumps({'type': 'card', 'card': card})}\n\n"
+
+        except HTTPException as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': e.detail})}\n\n"
+        except Exception as e:
+            print(f"[generate] unexpected error: {e}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-
-    try:
-        card = finalize_card(extract_json(raw))
-    except ValueError as e:
-        raise HTTPException(500, str(e))
-
-    # Inject origin tag
-    origin_tag = "Friction Rework" if (session.get("imported_card") is not None or req.mode in ("edit", "overhaul")) else "Friction Original"
-    if isinstance(card.get("data"), dict):
-        tags = card["data"].setdefault("tags", [])
-        if not any("Friction" in t for t in tags):
-            tags.append(origin_tag)
-        card["tags"] = card["data"]["tags"]
-
-    session["generated_card"] = card
-    return {"card": card}
 
 
 @app.post("/api/regenerate")
@@ -416,7 +512,6 @@ async def regenerate_card(req: RegenerateRequest):
 
     imported = session.get("imported_card")
     if imported is not None:
-        # Re-run the edit pass on the imported card, honoring extra feedback.
         card_json = json.dumps(imported.get("data", imported), ensure_ascii=False, indent=2)
         convo_block = f"\n\nEDITING CONVERSATION:\n{convo_text}" if convo_text else ""
         gen_prompt = (
@@ -432,31 +527,59 @@ async def regenerate_card(req: RegenerateRequest):
             f"Generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    raw = await call_api(
-        messages=[{"role": "user", "content": gen_prompt}],
-        system=GENERATION_SYSTEM,
-        api_key=api_key,
-        temperature=0.75,
-        max_tokens=100000,
-        timeout=GENERATION_TIMEOUT,
-        model=req.model,
+    origin_tag = "Friction Rework" if imported is not None else "Friction Original"
+    req_model = req.model
+
+    async def event_stream():
+        full_text = ""
+        last_ping = time.monotonic()
+        try:
+            async for chunk in call_api_streaming(
+                messages=[{"role": "user", "content": gen_prompt}],
+                system=GENERATION_SYSTEM,
+                api_key=api_key,
+                temperature=0.75,
+                max_tokens=50000,
+                timeout=GENERATION_TIMEOUT,
+                model=req_model,
+            ):
+                full_text += chunk
+                now = time.monotonic()
+                if now - last_ping >= 5:
+                    yield f"data: {json.dumps({'type': 'progress', 'chars': len(full_text)})}\n\n"
+                    last_ping = now
+
+            print(f"[regenerate] stream complete, {len(full_text)} chars", flush=True)
+
+            try:
+                card = finalize_card(extract_json(full_text))
+            except ValueError as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            if isinstance(card.get("data"), dict):
+                tags = card["data"].setdefault("tags", [])
+                if not any("Friction" in t for t in tags):
+                    tags.append(origin_tag)
+                card["tags"] = card["data"]["tags"]
+
+            session["generated_card"] = card
+            yield f"data: {json.dumps({'type': 'card', 'card': card})}\n\n"
+
+        except HTTPException as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': e.detail})}\n\n"
+        except Exception as e:
+            print(f"[regenerate] unexpected error: {e}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-
-    try:
-        card = finalize_card(extract_json(raw))
-    except ValueError as e:
-        raise HTTPException(500, str(e))
-
-    # Inject origin tag (regenerate always keeps the session's type)
-    origin_tag = "Friction Rework" if session.get("imported_card") is not None else "Friction Original"
-    if isinstance(card.get("data"), dict):
-        tags = card["data"].setdefault("tags", [])
-        if not any("Friction" in t for t in tags):
-            tags.append(origin_tag)
-        card["tags"] = card["data"]["tags"]
-
-    session["generated_card"] = card
-    return {"card": card}
 
 
 @app.get("/api/session/{session_id}")

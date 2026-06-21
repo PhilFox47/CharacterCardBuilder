@@ -25,18 +25,6 @@ load_dotenv()
 app = FastAPI(title="Character Card Builder")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
-@app.middleware("http")
-async def no_cache_static(request, call_next):
-    """Stop the browser caching app.js / index.html so model/UI fixes apply immediately."""
-    response = await call_next(request)
-    if request.url.path.startswith("/static") or request.url.path == "/":
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
-
-
 sessions: Dict[str, dict] = {}
 
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
@@ -235,7 +223,10 @@ async def call_api(
 @app.get("/")
 async def root():
     with open("static/index.html", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+        return HTMLResponse(
+            f.read(),
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+        )
 
 
 @app.get("/api/config")

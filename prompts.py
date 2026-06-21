@@ -50,6 +50,15 @@ INFORMATION TO GATHER (work through these naturally):
     - Any specific verbal habit: hedging ("probably", "I mean", "sort of")?
       Self-interruption? Letting silences sit? Over-explaining? Under-explaining?
 12. Specific likes and dislikes — push for concrete, revealing details
+12b. Character texture — these are often skipped but make a huge difference:
+    - What's their sense of humor like? What do they find genuinely funny vs. politely amusing? What humor do they find grating?
+    - How do they handle being wrong or corrected?
+    - What's something they're quietly good at that most people don't know about?
+    - What could they talk about for hours?
+    - What does a good, ordinary day look like for them — small and concrete?
+    - Do they follow rules because they agree, despite disagreeing, or do they quietly bend/break them?
+    - What's the first thing they notice about a new person or place?
+    - What makes them decide someone is worth taking seriously?
 13. Goals — immediate and long-term
 14. Relational patterns — how they navigate closeness:
     - Attachment style: do they pull people close then push away? Hold everyone at arm's length? Attach fast then feel smothered?
@@ -470,9 +479,9 @@ For each character, write 2–3 pre-assembled full outfits (no need for individu
 
 Notable Physical Features: [eye color, hair color and style, piercings, tattoos, scars, marks, glasses, etc.]
 
-SensoryProfile: [how they smell — their specific scent (perfume/natural/work/environment); what they feel like in close proximity — skin temperature, texture; what involuntary sounds they make; what physical textures and sensations they seek or avoid. Omit if genuinely not relevant to the card's tone.]
+SensoryProfile: [OPTIONAL — only include for NSFW cards or where physical closeness is central. Their specific scent; skin temperature and texture in close contact; physical sensations they seek or avoid. Skip entirely for cards where this adds nothing. 1–2 sentences if included.]
 
-BodyRelationship: [how they relate to their own body — comfortable in it or self-conscious, and in which contexts each? What do they like about how they look (even if they'd never say so)? What do they avoid or try to hide? What does a compliment about their body do to them — accept it, deflect it, disbelieve it? Does this shift when they trust someone? Omit or compress if not relevant to the card.]
+BodyRelationship: [OPTIONAL — only include for NSFW cards or where body-image tension is a real character theme. How they relate to their own body; what shifts with trust; what physical attention does to them. Skip entirely if not genuinely relevant. 1–2 sentences if included.]
 
 [If NSFW: Sexual Nature: [their sexual personality — see SEXUALITY section below]]
 
@@ -501,16 +510,34 @@ RelationalPatterns:
 ContextMap:
   Alone: [who they are when no one is watching — what they let themselves feel, do, or drop]
   Strangers: [default social mode; what mask they wear; what they guard]
-  Trusted: [how they open with people who've genuinely earned them; what specifically shifts]
+  Trusted: [how they open with people who've genuinely earned them; what specifically shifts — and after a moment of real vulnerability or intense connection, what briefly surfaces when defences drop? What do they let slip or reach for? How long before they re-armour?]
   Threat: [their threat response — fight/flight/freeze/fawn — and specifically what that looks like for them]
   Attracted: [advance or retreat when they want someone; what specifically changes in behavior]
   Impaired: [drunk/exhausted/cornered — what surfaces when the self-management drops]
 
-SeductionStyle: [how THEY pursue when they want someone — this is their move, not their kinks. Do they create situations and wait? Use accidental contact? Go quieter and let tension build? Get funnier and more oblique? Become suddenly very available and attentive? Deny any interest while making it obvious? Issue a direct challenge? Describe the specific shape of their pursuit — how {{user}} would experience being wanted by THIS person]
+SeductionStyle: [how THEY pursue when they want someone — their move, not their kinks. Create situations and wait? Accidental contact? Go quieter and let tension build? Get funnier and more oblique? Become suddenly very available? Deny interest while making it obvious? Direct challenge? 2–3 sentences max.]
 
-PostIntimacyBehaviour: [how they act in the first minutes/hours after sex or any moment of genuine vulnerability: cuddly or immediately armoured back up? Talkative or very quiet? Do they joke to defuse the weight of it? Check their phone to re-establish normalcy? Start cleaning or being useful? Get hungry? What does re-armoring look like — abrupt, or gradual? This is often the most revealing moment in a scene]
+PostIntimacyBehaviour: [how they act after sex or a moment of genuine vulnerability: cuddly or immediately re-armoured? Talkative or very quiet? Joke to defuse it? Check their phone? Start cleaning? What does re-armoring look like? 2–3 sentences max.]
 
-EmotionalVulnerabilityWindow: [after a fight, a moment of real fear, something that landed unexpectedly, or a genuine connection — what briefly surfaces when defences drop? What do they reach for, say, let slip? How long before they re-armour? Some characters have a very short window; others can't close it again once it's open. Write what specifically is different about them in this window]
+HumorProfile: [what they actually find funny — the type (dark/absurdist/self-deprecating/observational/wordplay); what makes them genuinely laugh vs. politely smile; what humor style they find grating or try-hard. 1–2 sentences.]
+
+HandleBeingWrong: [do they double down even when they know it? Quietly update without acknowledgment? Immediately overcorrect and apologize? Deflect into another topic? 1 sentence.]
+
+Misconceptions: [the type of assumption they routinely make about people or situations that tends to be wrong — the specific blind spot in how they read the world. Not about {{user}} in particular, but their general pattern. 1–2 sentences.]
+
+QuietlyProudOf: [a skill or knowledge area they don't advertise but are genuinely capable at — the thing that surfaces unexpectedly and surprises people. 1 sentence.]
+
+HoursTopic: [the subject they could genuinely talk about for hours — their niche passion or area of real knowledge. 1 sentence.]
+
+EnergyDynamics: [do they get more animated in long interactions or steadily run down? What do they need after stress or prolonged social contact — solitude, routine, noise, movement? 1–2 sentences.]
+
+GoodDay: [small and concrete — what a good Tuesday afternoon actually looks like for them. Not goals or ambitions; just what makes a quiet day feel right. 1–2 sentences.]
+
+FirstNotices: [the specific thing they clock first in a new person or space, before anything else. Reveals attention shape and values. 1 sentence.]
+
+RulesAndAuthority: [do they follow rules because they agree, follow despite disagreeing, bend them quietly, or openly resist? How does this play out in practice? 1 sentence.]
+
+WorthTakingSeriously: [what specifically changes in how they treat someone once they've assessed them as genuinely capable or interesting — the behavioral shift that signals real respect has been earned. 1–2 sentences.]
 
 Tells:
 [Physical/behavioral signs that betray their hidden emotional states — specific and concrete:
@@ -574,9 +601,9 @@ Skin(exact tone, e.g. "warm medium-brown with golden undertone"; texture; ethnic
 
 [If female or relevant: Breasts(cup size, shape, any notable features)]
 
-SensoryProfile(how they smell — specific scent, natural or applied; what they feel like in close proximity — skin temperature and texture; what physical sensations they seek or avoid. Omit if not relevant to the card's tone.)
+SensoryProfile(OPTIONAL — only for NSFW cards or where physical closeness is central. Specific scent; skin temperature and texture; sensations they seek or avoid. Skip entirely if not relevant. 1–2 sentences if included.)
 
-BodyRelationship(how they relate to their own body — comfortable or self-conscious, and in which contexts? What do they like about how they look, even if they'd never admit it? What shifts when someone they trust sees them? What does physical attention do to them? Omit or compress if not relevant.)
+BodyRelationship(OPTIONAL — only for NSFW cards or where body-image is a genuine character theme. How they relate to their own body; what shifts with trust; what physical attention does to them. Skip entirely if not relevant. 1–2 sentences if included.)
 
 ClothingStyle(their fixed aesthetic identity — the visual vibe that runs across all outfits regardless of occasion. e.g. "opulent and regal — rich fabrics, dark jewel tones, always layered and decorated"; "battle-worn practicality — dark leathers and linen, nothing worn that doesn't serve a function". This is identity, not just clothing.)
 
@@ -663,17 +690,35 @@ RelationalPatterns(
 ContextMap(
   Alone: [who they are when no one is watching — what they let themselves feel, do, or drop]
   Strangers: [default social mode; what mask they wear; what they guard]
-  Trusted: [how they open with people who've genuinely earned them; what specifically shifts]
+  Trusted: [how they open with people who've genuinely earned them; what specifically shifts — and what briefly surfaces in a moment of real vulnerability before they re-armour?]
   Threat: [fight/flight/freeze/fawn — their specific version of each]
   Attracted: [advance or retreat; what specifically changes in behavior when they want someone]
   Impaired: [drunk/exhausted/cornered — what surfaces when the self-management drops]
 )
 
-SeductionStyle(how THEY pursue when they want someone — their move, not their kinks. Create situations and wait? Use accidental contact? Go quieter and let tension build? Get more oblique and funny? Become suddenly very available? Deny any interest while making it obvious? Direct challenge? Write the specific shape of their pursuit)
+SeductionStyle(how THEY pursue when they want someone — their move, not their kinks. Create situations? Accidental contact? Go quieter? Get more oblique? Become very available? Direct challenge? 2–3 sentences max.)
 
-PostIntimacyBehaviour(how they act after sex or a moment of genuine vulnerability: cuddly or immediately re-armoured? Talkative or very quiet? Joke to defuse it? Get busy doing something useful? What does re-armoring look like for them?)
+PostIntimacyBehaviour(how they act after sex or a moment of genuine vulnerability: cuddly or immediately re-armoured? Talkative or quiet? Joke it off? Get busy? 2–3 sentences max.)
 
-EmotionalVulnerabilityWindow(after a fight, a scare, something that landed unexpectedly, or genuine connection — what briefly surfaces when defences drop? What do they let slip? How long before they re-armour? Some windows are very brief; some can't be closed again once open)
+HumorProfile(what they actually find funny — type of humor; what makes them genuinely laugh vs. politely smile; what style they find grating. 1–2 sentences.)
+
+HandleBeingWrong(do they double down? Quietly update without acknowledgment? Immediately overcorrect? Deflect? 1 sentence.)
+
+Misconceptions(the type of assumption they routinely make that tends to be wrong — their general blind spot in reading people or situations. 1–2 sentences.)
+
+QuietlyProudOf(a skill or knowledge area they don't advertise but are genuinely capable at — the thing that surfaces unexpectedly. 1 sentence.)
+
+HoursTopic(the subject they could talk about for hours — their niche passion or real expertise. 1 sentence.)
+
+EnergyDynamics(do they get more animated in long interactions or steadily run down? What do they need after stress or prolonged social contact? 1–2 sentences.)
+
+GoodDay(small and concrete — what a good quiet day actually looks like for them. Not goals; just what makes it feel right. 1–2 sentences.)
+
+FirstNotices(the specific thing they clock first in a new person or space, before anything else. 1 sentence.)
+
+RulesAndAuthority(follow rules because they agree, despite disagreeing, bend them quietly, or openly resist? How does it play out? 1 sentence.)
+
+WorthTakingSeriously(what specifically changes in how they treat someone once they've decided they're genuinely capable or interesting — the behavioral shift that signals real respect. 1–2 sentences.)
 
 ──────────────────────────────────────
 REGARDLESS OF FORMAT:
@@ -1137,7 +1182,7 @@ FORMATTING — match to the character's register:
 ALTERNATE_GREETINGS FIELD
 ═══════════════════════════════════════
 
-Write 3–5 alternate opening scenarios, each meaningfully different, PLUS one profile picture greeting as the final entry (see below).
+Write 2–3 alternate opening scenarios, each meaningfully different, PLUS one profile picture greeting as the final entry (see below).
 
 Every alternate greeting must start with its title and briefing, exactly like first_mes:
   [Title: "Name of This Variant"]

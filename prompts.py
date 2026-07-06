@@ -222,7 +222,7 @@ mes_example → ONE short exchange (two max) showing the character's voice. Wrap
 
 first_mes → open with the scene header line Friction Lite's Turn Structure uses every turn, so the very first message matches the pattern the model should repeat all story:
   📍 [specific location] | 🕒 [time] | [brief atmosphere note]
-  e.g. 📍 The Brass Cat | 🕒 20:15 | Dimly lit and bustling
+  This is a FORMAT to fill in, not a fixed example — "The Brass Cat", "20:15", and "Dimly lit and bustling" are illustrative only. Invent the actual location, time, and mood from THIS card's scenario each time; never copy that specific example.
   Then a clear, short opening scene (not mid-action): where {{user}} is, why, who else is present, and end on a natural handoff (a question, someone waiting for a reply). 2–3 paragraphs after the header. Match register with light markup if the setting calls for it (*action*, "speech"). Wrap each speaking character's dialogue lines in their assigned color from system_prompt, e.g. <font color="#E57373">"Like what you see?"</font> — narration and {{user}}'s own lines are never colored. This establishes the header pattern and the color from message one instead of leaving the model to invent both.
 
 alternate_greetings → ONE alternate scenario, meaningfully different (different meeting context or emotional register). Same scene-header and color-wrapping rules apply. Skip a profile-picture entry — no image system to feed here.

@@ -4,6 +4,9 @@ const state = {
   cardType:     'single',
   apiKey:       localStorage.getItem('nano_api_key') || '',
   model:        localStorage.getItem('nano_model') || '',   // empty = use server default
+  backend:      localStorage.getItem('cc_backend') || 'nanogpt',   // 'nanogpt' | 'lmstudio'
+  lmUrl:        localStorage.getItem('cc_lmstudio_url') || '',
+  hasServerKey: false,
   card:         null,
   loading:      false,
   activeTab:    'preview',
@@ -13,9 +16,17 @@ const state = {
 /* ── DOM refs ────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 
-const setupOverlay   = $('setupOverlay');
-const setupApiKey    = $('setupApiKey');
-const apiKeyRow      = $('apiKeyRow');
+const setupOverlay    = $('setupOverlay');
+const setupApiKey     = $('setupApiKey');
+const apiKeyRow       = $('apiKeyRow');
+const setupBackend    = $('setupBackend');
+const lmStudioRow     = $('lmStudioRow');
+const setupLmUrl      = $('setupLmUrl');
+const settingsBackend    = $('settingsBackend');
+const settingsApiKeyField = $('settingsApiKeyField');
+const settingsLmUrlField  = $('settingsLmUrlField');
+const settingsLmUrl       = $('settingsLmUrl');
+const headerSubtitle  = $('headerSubtitle');
 const startBtn       = $('startBtn');
 const chatPanel      = $('chatPanel');
 const chatTopbar     = $('chatTopbar');
@@ -52,16 +63,18 @@ const toastCont      = $('toastContainer');
 
 /* ── Init ────────────────────────────────────────────────── */
 async function init() {
-  // Check if server has a key configured; get server default model
+  // Check if server has a key configured; get server defaults for both backends
   try {
     const cfg = await apiFetch('/api/config', 'GET');
-    if (cfg.has_server_key) {
-      apiKeyRow.style.display = 'none'; // key is on server
-    }
+    state.hasServerKey = !!cfg.has_server_key;
     // Always set an explicit value: saved override first, then server default.
     // This ensures getModel() always returns something and the model is always
     // sent explicitly in every API request — no silent fallback to a stale server default.
-    settingsModel.value = state.model || cfg.model || 'xiaomi/mimo-v2.5-pro:thinking';
+    const serverDefaultModel = state.backend === 'lmstudio' ? cfg.lmstudio_model : cfg.model;
+    settingsModel.value = state.model || serverDefaultModel || '';
+    if (!state.lmUrl) {
+      state.lmUrl = cfg.lmstudio_base_url || 'http://localhost:1234/v1';
+    }
   } catch (_) {}
 
   // Restore saved key into setup field
@@ -69,6 +82,24 @@ async function init() {
     setupApiKey.value = state.apiKey;
     settingsApiKey.value = state.apiKey;
   }
+
+  // Restore backend + LM Studio URL, and reflect them in both UI locations
+  setupBackend.value = state.backend;
+  settingsBackend.value = state.backend;
+  setupLmUrl.value = state.lmUrl;
+  settingsLmUrl.value = state.lmUrl;
+  applyBackendVisibility();
+
+  setupBackend.addEventListener('change', () => {
+    state.backend = setupBackend.value;
+    settingsBackend.value = state.backend;
+    applyBackendVisibility();
+  });
+  settingsBackend.addEventListener('change', () => {
+    state.backend = settingsBackend.value;
+    setupBackend.value = state.backend;
+    applyBackendVisibility();
+  });
 
   // Type selection
   document.querySelectorAll('.type-btn').forEach(btn => {
@@ -123,6 +154,18 @@ async function init() {
   });
 }
 
+/* ── Backend selection ───────────────────────────────────── */
+function applyBackendVisibility() {
+  const isLocal = state.backend === 'lmstudio';
+  lmStudioRow.style.display = isLocal ? 'flex' : 'none';
+  settingsLmUrlField.style.display = isLocal ? 'flex' : 'none';
+  // API key isn't needed for a local LM Studio server, or when the server has one configured.
+  const showApiKey = !isLocal && !state.hasServerKey;
+  apiKeyRow.style.display = showApiKey ? 'flex' : 'none';
+  settingsApiKeyField.style.display = showApiKey ? 'flex' : 'none';
+  headerSubtitle.textContent = isLocal ? 'SillyTavern · Friction Lite · LM Studio (local)' : 'SillyTavern · Friction Lite · Nano-GPT';
+}
+
 /* ── API helpers ─────────────────────────────────────────── */
 async function apiFetch(path, method = 'POST', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -142,6 +185,15 @@ function getApiKey() {
 function getModel() {
   // Return the locally-saved model override, or undefined to use server default
   return settingsModel.value.trim() || state.model || undefined;
+}
+
+function getBackend() {
+  return state.backend === 'lmstudio' ? 'lmstudio' : 'nanogpt';
+}
+
+function getBaseUrl() {
+  if (getBackend() !== 'lmstudio') return undefined;
+  return (setupLmUrl.value.trim() || settingsLmUrl.value.trim() || state.lmUrl || 'http://localhost:1234/v1');
 }
 
 /* ── Loading ─────────────────────────────────────────────── */
@@ -238,6 +290,8 @@ async function startSession() {
       card_type: state.cardType,
       api_key: apiKey || null,
       model: getModel() || null,
+      backend: getBackend(),
+      base_url: getBaseUrl() || null,
     });
 
     state.sessionId = res.session_id;
@@ -275,6 +329,8 @@ async function importCard(apiKey) {
       card_json: raw,
       api_key: apiKey || null,
       model: getModel() || null,
+      backend: getBackend(),
+      base_url: getBaseUrl() || null,
     });
 
     state.sessionId = res.session_id;
@@ -346,6 +402,8 @@ async function sendMessage() {
       message: text,
       api_key: getApiKey() || null,
       model: getModel() || null,
+      backend: getBackend(),
+      base_url: getBaseUrl() || null,
     });
 
     removeTypingIndicator();
@@ -411,6 +469,8 @@ async function generateCard(mode = null) {
       api_key: getApiKey() || null,
       mode: mode,
       model: getModel() || null,
+      backend: getBackend(),
+      base_url: getBaseUrl() || null,
     });
 
     // Poll until the background job finishes.
@@ -456,6 +516,8 @@ async function regenerateCard() {
       feedback: feedback || null,
       api_key: getApiKey() || null,
       model: getModel() || null,
+      backend: getBackend(),
+      base_url: getBaseUrl() || null,
     });
 
     const card = await pollJob(job_id);
@@ -567,6 +629,21 @@ function saveSettingsHandler() {
   } else {
     localStorage.removeItem('nano_model');
   }
+
+  state.backend = settingsBackend.value;
+  setupBackend.value = state.backend;
+  localStorage.setItem('cc_backend', state.backend);
+
+  const lmUrl = settingsLmUrl.value.trim();
+  state.lmUrl = lmUrl;
+  setupLmUrl.value = lmUrl;
+  if (lmUrl) {
+    localStorage.setItem('cc_lmstudio_url', lmUrl);
+  } else {
+    localStorage.removeItem('cc_lmstudio_url');
+  }
+
+  applyBackendVisibility();
   settingsDrawer.classList.remove('open');
   toast('Settings saved.', 'success');
 }

@@ -18,7 +18,7 @@
   <header class="app-header">
     <span style="font-size:20px">⚔</span>
     <h1>Character Card Builder</h1>
-    <span class="header-subtitle">SillyTavern · Friction Preset · Nano-GPT</span>
+    <span class="header-subtitle" id="headerSubtitle">SillyTavern · Friction Lite</span>
     <div class="header-actions">
       <button class="btn btn-ghost" id="newBtn" style="display:none">＋ New Card</button>
       <button class="btn-icon" id="settingsBtn" title="Settings">⚙</button>
@@ -133,7 +133,7 @@
 <div class="setup-overlay" id="setupOverlay">
   <div class="setup-box">
     <h2>⚔ Character Card Builder</h2>
-    <p>Build rich SillyTavern character cards via AI conversation — optimised for the Friction preset.</p>
+    <p>Build lean SillyTavern character cards via AI conversation — optimised for the Friction Lite preset. Use Nano-GPT in the cloud, or a local model through LM Studio.</p>
 
     <div class="card-type-grid">
       <button class="type-btn active" data-type="single">
@@ -170,10 +170,24 @@
       <span class="api-key-note">Supports SillyTavern v2/v3 cards. We'll assess it, then you can edit or overhaul it for Friction.</span>
     </div>
 
+    <div class="api-key-row" id="backendRow">
+      <label>Model Backend</label>
+      <select id="setupBackend">
+        <option value="nanogpt">Nano-GPT (cloud)</option>
+        <option value="lmstudio">LM Studio (local)</option>
+      </select>
+    </div>
+
     <div class="api-key-row" id="apiKeyRow">
       <label>Nano-GPT API Key</label>
       <input type="password" id="setupApiKey" placeholder="ngpt-…" autocomplete="off">
       <span class="api-key-note">Your key is never stored server-side — used only for this session.</span>
+    </div>
+
+    <div class="api-key-row" id="lmStudioRow" style="display:none">
+      <label>LM Studio URL</label>
+      <input type="text" id="setupLmUrl" placeholder="http://localhost:1234/v1" autocomplete="off">
+      <span class="api-key-note">Make sure LM Studio's local server is running with a model loaded.</span>
     </div>
 
     <button class="btn btn-primary" id="startBtn" style="width:100%; justify-content:center; padding:12px">
@@ -190,14 +204,27 @@
   </div>
   <div class="settings-body">
     <div class="settings-field">
+      <label>Model Backend</label>
+      <select id="settingsBackend">
+        <option value="nanogpt">Nano-GPT (cloud)</option>
+        <option value="lmstudio">LM Studio (local)</option>
+      </select>
+      <span class="field-note">Saved locally.</span>
+    </div>
+    <div class="settings-field" id="settingsApiKeyField">
       <label>Nano-GPT API Key</label>
       <input type="password" id="settingsApiKey" placeholder="ngpt-…" autocomplete="off">
       <span class="field-note">Used for this session only.</span>
     </div>
+    <div class="settings-field" id="settingsLmUrlField" style="display:none">
+      <label>LM Studio URL</label>
+      <input type="text" id="settingsLmUrl" placeholder="http://localhost:1234/v1" autocomplete="off">
+      <span class="field-note">Make sure LM Studio's local server is running with a model loaded.</span>
+    </div>
     <div class="settings-field">
       <label>Model</label>
       <input type="text" id="settingsModel" placeholder="xiaomi/mimo-v2.5-pro:thinking" autocomplete="off">
-      <span class="field-note">Overrides the server default. Saved locally. Leave blank to use server default.</span>
+      <span class="field-note">Overrides the server default. Saved locally. Leave blank to use server default (LM Studio serves whatever's loaded regardless of this field).</span>
     </div>
     <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
   </div>

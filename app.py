@@ -29,13 +29,35 @@ sessions: Dict[str, dict] = {}
 jobs: Dict[str, dict] = {}   # job_id → {status, card?, error?}
 
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
+LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
+DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "local-model")
+DEFAULT_BACKEND = os.getenv("BACKEND", "nanogpt")  # "nanogpt" | "lmstudio"
 GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min default
 
+# Local models run with a much smaller context window (often 32k total, shared
+# with the whole chat), so their token budgets need to be far tighter than a
+# cloud thinking model's. Nano-GPT keeps generous limits; LM Studio gets lean ones.
+CHAT_MAX_TOKENS = {"nanogpt": 15000, "lmstudio": 1200}
+GEN_MAX_TOKENS = {"nanogpt": 50000, "lmstudio": 3500}
 
-def get_model() -> str:
+
+def resolve_backend(request_backend: Optional[str]) -> str:
+    backend = (request_backend or DEFAULT_BACKEND or "nanogpt").lower()
+    return "lmstudio" if backend == "lmstudio" else "nanogpt"
+
+
+def resolve_base_url(backend: str, request_base_url: Optional[str]) -> str:
+    if request_base_url:
+        return request_base_url.rstrip("/")
+    return LM_STUDIO_BASE_URL if backend == "lmstudio" else NANO_GPT_BASE_URL
+
+
+def get_model(backend: str = "nanogpt") -> str:
     """Read model from env each time so changes don't require a server restart."""
+    if backend == "lmstudio":
+        return os.getenv("LM_STUDIO_MODEL", DEFAULT_LM_STUDIO_MODEL)
     return os.getenv("NANO_GPT_MODEL", DEFAULT_MODEL)
 
 
@@ -45,34 +67,48 @@ class StartRequest(BaseModel):
     card_type: str          # "single" | "group" | "scenario"
     api_key: Optional[str] = None
     model: Optional[str] = None
+    backend: Optional[str] = None    # "nanogpt" | "lmstudio"
+    base_url: Optional[str] = None
 
 class ChatRequest(BaseModel):
     session_id: str
     message: str
     api_key: Optional[str] = None
     model: Optional[str] = None
+    backend: Optional[str] = None
+    base_url: Optional[str] = None
 
 class GenerateRequest(BaseModel):
     session_id: str
     api_key: Optional[str] = None
     mode: Optional[str] = None  # None | "edit" | "overhaul" (for imported cards)
     model: Optional[str] = None
+    backend: Optional[str] = None
+    base_url: Optional[str] = None
 
 class RegenerateRequest(BaseModel):
     session_id: str
     feedback: Optional[str] = None
     api_key: Optional[str] = None
     model: Optional[str] = None
+    backend: Optional[str] = None
+    base_url: Optional[str] = None
 
 class ImportRequest(BaseModel):
     card_json: str          # raw JSON text the user pasted/uploaded
     api_key: Optional[str] = None
     model: Optional[str] = None
+    backend: Optional[str] = None
+    base_url: Optional[str] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def resolve_api_key(request_key: Optional[str]) -> str:
+def resolve_api_key(request_key: Optional[str], backend: str = "nanogpt") -> str:
+    if backend == "lmstudio":
+        # LM Studio's local server doesn't require auth; send a placeholder
+        # since some HTTP clients expect a non-empty Authorization header.
+        return request_key or "lm-studio"
     key = request_key or DEFAULT_API_KEY
     if not key:
         raise HTTPException(
@@ -178,9 +214,12 @@ async def call_api(
     max_tokens: int = 6000,
     timeout: float = 300.0,
     model: Optional[str] = None,
+    backend: str = "nanogpt",
+    base_url: Optional[str] = None,
 ) -> str:
-    resolved_model = model or get_model()
-    print(f"[call_api] requesting model={resolved_model!r}", flush=True)
+    resolved_model = model or get_model(backend)
+    resolved_base_url = base_url or resolve_base_url(backend, None)
+    print(f"[call_api] backend={backend!r} requesting model={resolved_model!r}", flush=True)
     payload = {
         "model": resolved_model,
         "messages": [{"role": "system", "content": system}] + messages,
@@ -193,7 +232,7 @@ async def call_api(
             timeout=httpx.Timeout(timeout, connect=15.0)
         ) as client:
             resp = await client.post(
-                f"{NANO_GPT_BASE_URL}/chat/completions",
+                f"{resolved_base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
@@ -228,14 +267,17 @@ async def call_api_streaming(
     max_tokens: int = 50000,
     timeout: float = 3600.0,
     model: Optional[str] = None,
+    backend: str = "nanogpt",
+    base_url: Optional[str] = None,
 ) -> AsyncIterator[str]:
-    """Async generator yielding text chunks from Nano-GPT's streaming API.
+    """Async generator yielding text chunks from the backend's streaming API.
 
     Streaming keeps the HTTP connection alive so intermediate proxies don't
     timeout while a thinking model reasons before producing output.
     """
-    resolved_model = model or get_model()
-    print(f"[call_api_streaming] requesting model={resolved_model!r}", flush=True)
+    resolved_model = model or get_model(backend)
+    resolved_base_url = base_url or resolve_base_url(backend, None)
+    print(f"[call_api_streaming] backend={backend!r} requesting model={resolved_model!r}", flush=True)
     payload = {
         "model": resolved_model,
         "messages": [{"role": "system", "content": system}] + messages,
@@ -250,7 +292,7 @@ async def call_api_streaming(
         ) as client:
             async with client.stream(
                 "POST",
-                f"{NANO_GPT_BASE_URL}/chat/completions",
+                f"{resolved_base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
@@ -260,10 +302,10 @@ async def call_api_streaming(
                 if resp.status_code != 200:
                     body = await resp.aread()
                     body_text = body.decode("utf-8", errors="replace")
-                    print(f"[call_api_streaming] Nano-GPT error {resp.status_code}: {body_text[:500]}", flush=True)
+                    print(f"[call_api_streaming] error {resp.status_code}: {body_text[:500]}", flush=True)
                     raise HTTPException(
                         resp.status_code,
-                        f"Nano-GPT API error ({resp.status_code}): {body_text[:300]}"
+                        f"API error ({resp.status_code}): {body_text[:300]}"
                     )
                 async for line in resp.aiter_lines():
                     if line.startswith("data: "):
@@ -284,7 +326,7 @@ async def call_api_streaming(
             "Try again — thinking models can be slow on large requests."
         )
     except httpx.RequestError as e:
-        raise HTTPException(502, f"Network error reaching Nano-GPT: {e}")
+        raise HTTPException(502, f"Network error reaching the model backend: {e}")
 
 
 async def call_api_collect(
@@ -295,8 +337,10 @@ async def call_api_collect(
     max_tokens: int = 50000,
     timeout: float = 3600.0,
     model: Optional[str] = None,
+    backend: str = "nanogpt",
+    base_url: Optional[str] = None,
 ) -> str:
-    """Stream from Nano-GPT (to keep that upstream connection alive during the
+    """Stream from the backend (to keep that upstream connection alive during the
     model's long thinking phase) but collect the full output and return it as a
     single string — so the browser still gets one normal JSON response.
     """
@@ -309,6 +353,8 @@ async def call_api_collect(
         max_tokens=max_tokens,
         timeout=timeout,
         model=model,
+        backend=backend,
+        base_url=base_url,
     ):
         full_text += chunk
     print(f"[call_api_collect] collected {len(full_text)} chars", flush=True)
@@ -323,8 +369,10 @@ async def _run_generation_job(
     session: dict,
     origin_tag: str,
     temperature: float,
+    backend: str = "nanogpt",
+    base_url: Optional[str] = None,
 ) -> None:
-    """Background task: stream from Nano-GPT, process the card, store result in jobs[]."""
+    """Background task: stream from the backend, process the card, store result in jobs[]."""
     jobs[job_id] = {"status": "running"}
     try:
         raw = await call_api_collect(
@@ -332,9 +380,11 @@ async def _run_generation_job(
             system=GENERATION_SYSTEM,
             api_key=api_key,
             temperature=temperature,
-            max_tokens=50000,
+            max_tokens=GEN_MAX_TOKENS.get(backend, 50000),
             timeout=GENERATION_TIMEOUT,
             model=req_model,
+            backend=backend,
+            base_url=base_url,
         )
         card = finalize_card(extract_json(raw))
         if isinstance(card.get("data"), dict):
@@ -366,8 +416,14 @@ async def root():
 
 @app.get("/api/config")
 async def get_config():
-    """Tell the frontend whether a server-side API key is configured."""
-    return {"has_server_key": bool(DEFAULT_API_KEY), "model": get_model()}
+    """Tell the frontend the server-side defaults for both backends."""
+    return {
+        "has_server_key": bool(DEFAULT_API_KEY),
+        "backend": DEFAULT_BACKEND,
+        "model": get_model("nanogpt"),
+        "lmstudio_model": get_model("lmstudio"),
+        "lmstudio_base_url": LM_STUDIO_BASE_URL,
+    }
 
 
 @app.post("/api/start")
@@ -375,7 +431,9 @@ async def start_session(req: StartRequest):
     if req.card_type not in CLARIFICATION_SYSTEM:
         raise HTTPException(400, f"Invalid card_type: {req.card_type}")
 
-    api_key = resolve_api_key(req.api_key)
+    backend = resolve_backend(req.backend)
+    base_url = resolve_base_url(backend, req.base_url)
+    api_key = resolve_api_key(req.api_key, backend)
 
     session_id = str(uuid.uuid4())
     sessions[session_id] = {
@@ -394,8 +452,10 @@ async def start_session(req: StartRequest):
         system=CLARIFICATION_SYSTEM[req.card_type],
         api_key=api_key,
         temperature=0.85,
-        max_tokens=15000,
+        max_tokens=CHAT_MAX_TOKENS.get(backend, 15000),
         model=req.model,
+        backend=backend,
+        base_url=base_url,
     )
 
     sessions[session_id]["messages"].append({"role": "assistant", "content": initial})
@@ -407,7 +467,9 @@ async def chat(req: ChatRequest):
     if req.session_id not in sessions:
         raise HTTPException(404, "Session not found")
 
-    api_key = resolve_api_key(req.api_key)
+    backend = resolve_backend(req.backend)
+    base_url = resolve_base_url(backend, req.base_url)
+    api_key = resolve_api_key(req.api_key, backend)
     session = sessions[req.session_id]
 
     session["messages"].append({"role": "user", "content": req.message})
@@ -425,8 +487,10 @@ async def chat(req: ChatRequest):
         system=system,
         api_key=api_key,
         temperature=0.85,
-        max_tokens=15000,
+        max_tokens=CHAT_MAX_TOKENS.get(backend, 15000),
         model=req.model,
+        backend=backend,
+        base_url=base_url,
     )
 
     session["messages"].append({"role": "assistant", "content": response})
@@ -436,7 +500,9 @@ async def chat(req: ChatRequest):
 @app.post("/api/import")
 async def import_card(req: ImportRequest):
     """Import an existing character card JSON and open an editing session."""
-    api_key = resolve_api_key(req.api_key)
+    backend = resolve_backend(req.backend)
+    base_url = resolve_base_url(backend, req.base_url)
+    api_key = resolve_api_key(req.api_key, backend)
 
     try:
         raw = json.loads(req.card_json)
@@ -465,8 +531,10 @@ async def import_card(req: ImportRequest):
         system=system,
         api_key=api_key,
         temperature=0.7,
-        max_tokens=15000,
+        max_tokens=CHAT_MAX_TOKENS.get(backend, 15000),
         model=req.model,
+        backend=backend,
+        base_url=base_url,
     )
 
     sessions[session_id]["messages"].append({"role": "assistant", "content": initial})
@@ -478,7 +546,9 @@ async def generate_card(req: GenerateRequest, background_tasks: BackgroundTasks)
     if req.session_id not in sessions:
         raise HTTPException(404, "Session not found")
 
-    api_key = resolve_api_key(req.api_key)
+    backend = resolve_backend(req.backend)
+    base_url = resolve_base_url(backend, req.base_url)
+    api_key = resolve_api_key(req.api_key, backend)
     session = sessions[req.session_id]
 
     imported = session.get("imported_card")
@@ -512,7 +582,7 @@ async def generate_card(req: GenerateRequest, background_tasks: BackgroundTasks)
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.7
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.7, backend, base_url
     )
     return {"job_id": job_id}
 
@@ -522,7 +592,9 @@ async def regenerate_card(req: RegenerateRequest, background_tasks: BackgroundTa
     if req.session_id not in sessions:
         raise HTTPException(404, "Session not found")
 
-    api_key = resolve_api_key(req.api_key)
+    backend = resolve_backend(req.backend)
+    base_url = resolve_base_url(backend, req.base_url)
+    api_key = resolve_api_key(req.api_key, backend)
     session = sessions[req.session_id]
 
     convo_text = convo_to_text(session["messages"])
@@ -551,7 +623,7 @@ async def regenerate_card(req: RegenerateRequest, background_tasks: BackgroundTa
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.75
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.75, backend, base_url
     )
     return {"job_id": job_id}
 

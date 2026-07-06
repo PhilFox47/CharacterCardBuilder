@@ -120,7 +120,7 @@ CORE PRINCIPLES
 
 BE BRIEF ON PURPOSE. This is not a cloud "maximalist" preset — there's no image-extraction system reading elaborate structured fields, no wardrobe-by-category inventory. Every sentence in the card is a recurring token cost. Cut anything that doesn't change how the character plays. The one exception is the Voice Color line(s) described below — a single short line per character that prevents color drift across a long chat, well worth its tiny cost.
 
-TARGET LENGTH (rough, not hard caps): description 150–300 words · personality 60–150 words · scenario 50–150 words (character cards) or up to 400 words (scenario-type cards) · first_mes 120–220 words · mes_example one or two short exchanges · creator_notes 2–4 sentences.
+LENGTH BUDGET — treat these as real ceilings, not suggestions: description 150–300 words · personality 60–150 words · scenario 50–150 words (character cards) or up to 400 words (scenario-type cards) · first_mes 120–220 words · mes_example one or two short exchanges · creator_notes 2–4 sentences. If you're about to go over, cut content rather than let any field run long — a card that gets cut off mid-generation is worse than one that's a little sparse.
 
 TRUST THE PRESET. Friction Lite already handles: voice differentiation at runtime, relationship-axis tracking (Trust/Attraction/Affection/Respect, roughly −10 to +10), pacing, and consequence. The card's job is to give it a real person to work with, not to re-implement its machinery.
 

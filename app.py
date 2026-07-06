@@ -38,9 +38,17 @@ GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min de
 
 # Local models run with a much smaller context window (often 32k total, shared
 # with the whole chat), so their token budgets need to be far tighter than a
-# cloud thinking model's. Nano-GPT keeps generous limits; LM Studio gets lean ones.
-CHAT_MAX_TOKENS = {"nanogpt": 15000, "lmstudio": 1200}
-GEN_MAX_TOKENS = {"nanogpt": 50000, "lmstudio": 3500}
+# cloud thinking model's. Nano-GPT keeps generous limits; LM Studio gets lean
+# ones — but still enough headroom that a card shouldn't realistically hit the
+# ceiling. Overridable per-backend via env if your local model needs more/less.
+CHAT_MAX_TOKENS = {
+    "nanogpt": int(os.getenv("CHAT_MAX_TOKENS_NANOGPT", "15000")),
+    "lmstudio": int(os.getenv("CHAT_MAX_TOKENS_LMSTUDIO", "1200")),
+}
+GEN_MAX_TOKENS = {
+    "nanogpt": int(os.getenv("GEN_MAX_TOKENS_NANOGPT", "50000")),
+    "lmstudio": int(os.getenv("GEN_MAX_TOKENS_LMSTUDIO", "6000")),
+}
 
 
 def resolve_backend(request_backend: Optional[str]) -> str:
@@ -294,11 +302,16 @@ async def call_api_streaming(
     model: Optional[str] = None,
     backend: str = "nanogpt",
     base_url: Optional[str] = None,
+    meta: Optional[dict] = None,
 ) -> AsyncIterator[str]:
     """Async generator yielding text chunks from the backend's streaming API.
 
     Streaming keeps the HTTP connection alive so intermediate proxies don't
     timeout while a thinking model reasons before producing output.
+
+    If `meta` is given, its "finish_reason" key is set once the API reports
+    one (e.g. "stop" or "length") — lets callers tell "ran out of tokens"
+    apart from "the model actually finished."
     """
     resolved_base_url = base_url or resolve_base_url(backend, None)
     resolved_model = await resolve_effective_model(model, backend, resolved_base_url, api_key)
@@ -339,9 +352,13 @@ async def call_api_streaming(
                             return
                         try:
                             data = json.loads(chunk)
-                            delta = data["choices"][0]["delta"].get("content", "")
+                            choice = data["choices"][0]
+                            delta = choice.get("delta", {}).get("content", "")
                             if delta:
                                 yield delta
+                            finish_reason = choice.get("finish_reason")
+                            if finish_reason and meta is not None:
+                                meta["finish_reason"] = finish_reason
                         except (json.JSONDecodeError, KeyError, IndexError):
                             pass
     except httpx.TimeoutException:
@@ -370,6 +387,7 @@ async def call_api_collect(
     single string — so the browser still gets one normal JSON response.
     """
     full_text = ""
+    meta: dict = {}
     async for chunk in call_api_streaming(
         messages=messages,
         system=system,
@@ -380,10 +398,18 @@ async def call_api_collect(
         model=model,
         backend=backend,
         base_url=base_url,
+        meta=meta,
     ):
         full_text += chunk
-    print(f"[call_api_collect] collected {len(full_text)} chars", flush=True)
-    return strip_thinking(full_text)
+    print(f"[call_api_collect] collected {len(full_text)} chars, finish_reason={meta.get('finish_reason')!r}", flush=True)
+    text = strip_thinking(full_text)
+    if meta.get("finish_reason") == "length":
+        raise ValueError(
+            f"The model hit the {max_tokens:,}-token generation limit before finishing the card "
+            f"({len(text):,} chars produced). Raise GEN_MAX_TOKENS_LMSTUDIO (or GEN_MAX_TOKENS_NANOGPT) "
+            "in your .env and restart the server, or ask for a shorter card."
+        )
+    return text
 
 
 async def _run_generation_job(

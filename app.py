@@ -61,6 +61,31 @@ def get_model(backend: str = "nanogpt") -> str:
     return os.getenv("NANO_GPT_MODEL", DEFAULT_MODEL)
 
 
+async def resolve_effective_model(
+    model: Optional[str], backend: str, base_url: str, api_key: str
+) -> str:
+    """Pick the model to request. An explicit override always wins. For
+    LM Studio with no override, ask LM Studio itself which model is loaded
+    right now — this is what lets a locally-swapped model "just work"
+    without the app ever hardcoding one model name."""
+    if model:
+        return model
+    if backend == "lmstudio":
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=3.0)) as client:
+                resp = await client.get(
+                    f"{base_url}/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                )
+                if resp.status_code == 200:
+                    loaded = resp.json().get("data", [])
+                    if loaded:
+                        return loaded[0]["id"]
+        except (httpx.RequestError, ValueError, KeyError, IndexError) as e:
+            print(f"[resolve_effective_model] couldn't query LM Studio's loaded model: {e}", flush=True)
+    return get_model(backend)
+
+
 # ── Request models ────────────────────────────────────────────────────────────
 
 class StartRequest(BaseModel):
@@ -217,8 +242,8 @@ async def call_api(
     backend: str = "nanogpt",
     base_url: Optional[str] = None,
 ) -> str:
-    resolved_model = model or get_model(backend)
     resolved_base_url = base_url or resolve_base_url(backend, None)
+    resolved_model = await resolve_effective_model(model, backend, resolved_base_url, api_key)
     print(f"[call_api] backend={backend!r} requesting model={resolved_model!r}", flush=True)
     payload = {
         "model": resolved_model,
@@ -275,8 +300,8 @@ async def call_api_streaming(
     Streaming keeps the HTTP connection alive so intermediate proxies don't
     timeout while a thinking model reasons before producing output.
     """
-    resolved_model = model or get_model(backend)
     resolved_base_url = base_url or resolve_base_url(backend, None)
+    resolved_model = await resolve_effective_model(model, backend, resolved_base_url, api_key)
     print(f"[call_api_streaming] backend={backend!r} requesting model={resolved_model!r}", flush=True)
     payload = {
         "model": resolved_model,

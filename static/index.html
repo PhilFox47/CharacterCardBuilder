@@ -224,7 +224,7 @@
     <div class="settings-field">
       <label>Model</label>
       <input type="text" id="settingsModel" placeholder="xiaomi/mimo-v2.5-pro:thinking" autocomplete="off">
-      <span class="field-note">Overrides the server default. Saved locally. Leave blank to use server default (LM Studio serves whatever's loaded regardless of this field).</span>
+      <span class="field-note" id="settingsModelNote">Overrides the server default. Saved locally per backend — switching backends won't overwrite the other one's model.</span>
     </div>
     <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
   </div>

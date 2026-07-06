@@ -3,9 +3,12 @@ const state = {
   sessionId:    null,
   cardType:     'single',
   apiKey:       localStorage.getItem('nano_api_key') || '',
-  model:        localStorage.getItem('nano_model') || '',   // empty = use server default
+  model:        localStorage.getItem('nano_model') || '',   // empty = use server default (Nano-GPT)
+  lmModel:      localStorage.getItem('cc_lmstudio_model') || '',   // empty = use whatever LM Studio has loaded
   backend:      localStorage.getItem('cc_backend') || 'nanogpt',   // 'nanogpt' | 'lmstudio'
   lmUrl:        localStorage.getItem('cc_lmstudio_url') || '',
+  serverModelNano: '',
+  serverModelLm:   '',
   hasServerKey: false,
   card:         null,
   loading:      false,
@@ -48,6 +51,7 @@ const settingsDrawer = $('settingsDrawer');
 const closeSettings  = $('closeSettingsBtn');
 const settingsApiKey = $('settingsApiKey');
 const settingsModel  = $('settingsModel');
+const settingsModelNote = $('settingsModelNote');
 const saveSettings   = $('saveSettingsBtn');
 const loadingBar     = $('loadingBar');
 const cardEmpty      = $('cardEmpty');
@@ -67,11 +71,8 @@ async function init() {
   try {
     const cfg = await apiFetch('/api/config', 'GET');
     state.hasServerKey = !!cfg.has_server_key;
-    // Always set an explicit value: saved override first, then server default.
-    // This ensures getModel() always returns something and the model is always
-    // sent explicitly in every API request — no silent fallback to a stale server default.
-    const serverDefaultModel = state.backend === 'lmstudio' ? cfg.lmstudio_model : cfg.model;
-    settingsModel.value = state.model || serverDefaultModel || '';
+    state.serverModelNano = cfg.model || '';
+    state.serverModelLm = cfg.lmstudio_model || '';
     if (!state.lmUrl) {
       state.lmUrl = cfg.lmstudio_base_url || 'http://localhost:1234/v1';
     }
@@ -89,16 +90,22 @@ async function init() {
   setupLmUrl.value = state.lmUrl;
   settingsLmUrl.value = state.lmUrl;
   applyBackendVisibility();
+  // Show the model saved for the CURRENTLY selected backend, not whatever
+  // was last typed for the other one — this is what stops a Nano-GPT model
+  // string (or vice versa) leaking into the wrong backend's request.
+  syncModelFieldToBackend();
 
   setupBackend.addEventListener('change', () => {
     state.backend = setupBackend.value;
     settingsBackend.value = state.backend;
     applyBackendVisibility();
+    syncModelFieldToBackend();
   });
   settingsBackend.addEventListener('change', () => {
     state.backend = settingsBackend.value;
     setupBackend.value = state.backend;
     applyBackendVisibility();
+    syncModelFieldToBackend();
   });
 
   // Type selection
@@ -166,6 +173,24 @@ function applyBackendVisibility() {
   headerSubtitle.textContent = isLocal ? 'SillyTavern · Friction Lite · LM Studio (local)' : 'SillyTavern · Friction Lite · Nano-GPT';
 }
 
+// Each backend keeps its OWN model override, so switching backends never
+// sends a leftover Nano-GPT model string to LM Studio (or vice versa).
+function syncModelFieldToBackend() {
+  if (state.backend === 'lmstudio') {
+    settingsModel.value = state.lmModel || state.serverModelLm || '';
+    settingsModel.placeholder = 'e.g. gemma-3-12b-it-qat-heretic';
+    if (settingsModelNote) {
+      settingsModelNote.textContent = "The exact model ID LM Studio shows for what you have loaded. Leave blank to let LM Studio use whatever's currently loaded.";
+    }
+  } else {
+    settingsModel.value = state.model || state.serverModelNano || '';
+    settingsModel.placeholder = 'xiaomi/mimo-v2.5-pro:thinking';
+    if (settingsModelNote) {
+      settingsModelNote.textContent = 'Overrides the server default. Saved locally per backend — switching backends won\'t overwrite the other one\'s model.';
+    }
+  }
+}
+
 /* ── API helpers ─────────────────────────────────────────── */
 async function apiFetch(path, method = 'POST', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -183,8 +208,13 @@ function getApiKey() {
 }
 
 function getModel() {
-  // Return the locally-saved model override, or undefined to use server default
-  return settingsModel.value.trim() || state.model || undefined;
+  // Whatever's currently typed wins (it reflects the active backend — see
+  // syncModelFieldToBackend). Otherwise fall back to that backend's own
+  // saved override. Returning undefined lets the server use its default
+  // (for LM Studio: whatever model is currently loaded).
+  const typed = settingsModel.value.trim();
+  if (typed) return typed;
+  return (getBackend() === 'lmstudio' ? state.lmModel : state.model) || undefined;
 }
 
 function getBackend() {
@@ -622,12 +652,17 @@ function saveSettingsHandler() {
     setupApiKey.value = key;
     localStorage.setItem('nano_api_key', key);
   }
+  // The model field always belongs to whichever backend is selected right now
+  // (see syncModelFieldToBackend) — save it into that backend's own slot.
   const model = settingsModel.value.trim();
-  state.model = model;
-  if (model) {
-    localStorage.setItem('nano_model', model);
+  if (settingsBackend.value === 'lmstudio') {
+    state.lmModel = model;
+    if (model) localStorage.setItem('cc_lmstudio_model', model);
+    else localStorage.removeItem('cc_lmstudio_model');
   } else {
-    localStorage.removeItem('nano_model');
+    state.model = model;
+    if (model) localStorage.setItem('nano_model', model);
+    else localStorage.removeItem('nano_model');
   }
 
   state.backend = settingsBackend.value;
@@ -644,6 +679,7 @@ function saveSettingsHandler() {
   }
 
   applyBackendVisibility();
+  syncModelFieldToBackend();
   settingsDrawer.classList.remove('open');
   toast('Settings saved.', 'success');
 }

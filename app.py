@@ -31,6 +31,7 @@ jobs: Dict[str, dict] = {}   # job_id → {status, card?, error?}
 NANO_GPT_BASE_URL = os.getenv("NANO_GPT_BASE_URL", "https://api.nano-gpt.com/v1")
 LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
+LM_STUDIO_API_KEY = os.getenv("LM_STUDIO_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
 DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "local-model")
 DEFAULT_BACKEND = os.getenv("BACKEND", "lmstudio")  # "nanogpt" | "lmstudio"
@@ -143,9 +144,11 @@ class ImportRequest(BaseModel):
 
 def resolve_api_key(request_key: Optional[str], backend: str = "nanogpt") -> str:
     if backend == "lmstudio":
-        # LM Studio's local server doesn't require auth; send a placeholder
-        # since some HTTP clients expect a non-empty Authorization header.
-        return request_key or "lm-studio"
+        # A vanilla LM Studio server needs no auth, but the user may have put it
+        # behind a key. Prefer an explicit per-session key, then LM_STUDIO_API_KEY
+        # from the env, then a harmless placeholder (some HTTP clients want a
+        # non-empty Authorization header).
+        return request_key or LM_STUDIO_API_KEY or "lm-studio"
     key = request_key or DEFAULT_API_KEY
     if not key:
         raise HTTPException(

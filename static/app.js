@@ -204,6 +204,10 @@ async function apiFetch(path, method = 'POST', body = null) {
 }
 
 function getApiKey() {
+  // The Nano-GPT key field is hidden while LM Studio is selected. Don't send
+  // the saved Nano key in that case — it would override LM_STUDIO_API_KEY on
+  // the server. Return undefined so the server uses its env key (if any).
+  if (getBackend() === 'lmstudio') return undefined;
   return setupApiKey.value.trim() || settingsApiKey.value.trim() || state.apiKey || undefined;
 }
 

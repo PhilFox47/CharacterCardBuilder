@@ -174,7 +174,7 @@
       <label>Model Backend</label>
       <select id="setupBackend">
         <option value="nanogpt">Nano-GPT (cloud)</option>
-        <option value="lmstudio">LM Studio (local)</option>
+        <option value="lmstudio" selected>LM Studio (local)</option>
       </select>
     </div>
 
@@ -187,7 +187,7 @@
     <div class="api-key-row" id="lmStudioRow" style="display:none">
       <label>LM Studio URL</label>
       <input type="text" id="setupLmUrl" placeholder="http://localhost:1234/v1" autocomplete="off">
-      <span class="api-key-note">Make sure LM Studio's local server is running with a model loaded.</span>
+      <span class="api-key-note">This address is contacted by the SERVER running this app, not your browser. "localhost" here means the server machine — if LM Studio runs on that same machine, the default is already correct. If LM Studio runs elsewhere on your network, enter that machine's address instead.</span>
     </div>
 
     <button class="btn btn-primary" id="startBtn" style="width:100%; justify-content:center; padding:12px">
@@ -207,7 +207,7 @@
       <label>Model Backend</label>
       <select id="settingsBackend">
         <option value="nanogpt">Nano-GPT (cloud)</option>
-        <option value="lmstudio">LM Studio (local)</option>
+        <option value="lmstudio" selected>LM Studio (local)</option>
       </select>
       <span class="field-note">Saved locally.</span>
     </div>
@@ -219,7 +219,7 @@
     <div class="settings-field" id="settingsLmUrlField" style="display:none">
       <label>LM Studio URL</label>
       <input type="text" id="settingsLmUrl" placeholder="http://localhost:1234/v1" autocomplete="off">
-      <span class="field-note">Make sure LM Studio's local server is running with a model loaded.</span>
+      <span class="field-note">Contacted by the SERVER running this app, not your browser — "localhost" means the server machine. Only change this if LM Studio runs on a different machine than the server.</span>
     </div>
     <div class="settings-field">
       <label>Model</label>

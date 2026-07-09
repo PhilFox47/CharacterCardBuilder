@@ -33,7 +33,7 @@ LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
 DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "local-model")
-DEFAULT_BACKEND = os.getenv("BACKEND", "nanogpt")  # "nanogpt" | "lmstudio"
+DEFAULT_BACKEND = os.getenv("BACKEND", "lmstudio")  # "nanogpt" | "lmstudio"
 GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min default
 
 # Local models run with a much smaller context window (often 32k total, shared
@@ -57,6 +57,10 @@ def resolve_backend(request_backend: Optional[str]) -> str:
 
 
 def resolve_base_url(backend: str, request_base_url: Optional[str]) -> str:
+    # NOTE: this URL is only ever contacted from here — server-side, via httpx,
+    # inside this FastAPI process. It is never fetched from the browser. So
+    # "localhost" always means the machine running this server process, never
+    # the end user's device, regardless of where the browser itself is.
     if request_base_url:
         return request_base_url.rstrip("/")
     return LM_STUDIO_BASE_URL if backend == "lmstudio" else NANO_GPT_BASE_URL

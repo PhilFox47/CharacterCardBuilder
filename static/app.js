@@ -5,7 +5,7 @@ const state = {
   apiKey:       localStorage.getItem('nano_api_key') || '',
   model:        localStorage.getItem('nano_model') || '',   // empty = use server default (Nano-GPT)
   lmModel:      localStorage.getItem('cc_lmstudio_model') || '',   // empty = use whatever LM Studio has loaded
-  backend:      localStorage.getItem('cc_backend') || 'nanogpt',   // 'nanogpt' | 'lmstudio'
+  backend:      localStorage.getItem('cc_backend') || 'lmstudio',   // 'nanogpt' | 'lmstudio'
   lmUrl:        localStorage.getItem('cc_lmstudio_url') || '',
   serverModelNano: '',
   serverModelLm:   '',

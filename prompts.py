@@ -233,12 +233,11 @@ first_mes → open with the scene header line Friction Lite's Turn Structure use
   📍 [specific location] | 🕒 [time] | [brief atmosphere note]
   This is a FORMAT to fill in, not a fixed example — "The Brass Cat", "20:15", and "Dimly lit and bustling" are illustrative only. Invent the actual location, time, and mood from THIS card's scenario each time; never copy that specific example.
 
-  ORIENT THE PLAYER FIRST — this is the single most important rule for first_mes, and the most common failure. The player is stepping in cold and CANNOT read the card (that would spoil it). Do NOT open in medias res. Before anything happens, the opening must establish, in flowing second-person prose:
-    • WHO {{user}} is here — their role or situation in this scene ("You've been the night clerk at this motel for three months", "You're a hunter passing through, furs to sell and coin running short", "You transferred into the department last week").
-    • WHERE they are — the place, named and concrete, and how they came to be in it.
-    • WHY they're here — the reason they're in this situation right now.
+  ORIENT THE PLAYER FIRST — this is the single most important rule for first_mes, and the most common failure. The player is stepping in cold and CANNOT read the card (that would spoil it). Do NOT open in medias res. Before anything happens, the opening must give the player enough SITUATIONAL context to act, in flowing second-person prose:
+    • THE SITUATION — where they are (named, concrete) and what's going on around them right now; how the moment came to be.
+    • WHY they're here / WHAT they already know — the context the player needs to step in: what brought them to this place, what's expected of them, what's already understood between them and the character. This is the load-bearing part — a player who knows the stakes and the backstory can act; one who doesn't is stuck.
     • WHO the character is — introduced with a first-impression physical description, exactly as a stranger seeing them for the first time would perceive them, plus the surface of how {{user}} knows them or has just met them.
-  Weave this into the fiction as natural second-person narration — it is not a meta briefing or a bulleted list, but the player must come away knowing all four things without ever having read the card.
+  Go LIGHT on defining who {{user}} is as a person — their personality, feelings, and choices belong to the player, not the card. Establish only the minimum role or circumstance the scene actually requires ("you're the new hire", "you answered the ad", "you've been traveling with them a week") and stop there; never script {{user}}'s inner state, opinions, or reactions. Weave all of this into natural second-person narration — not a meta briefing or a bulleted list — so the player comes away oriented without ever having read the card.
 
   SPOILER WALL — orientation is SURFACE ONLY. Never let the Hidden Agenda, the Twist, secrets, or anything the character conceals leak into first_mes. Introduce the character as they present to a stranger, not as they truly are. If a fact would be a discovery during play, it does not belong in the opening.
 

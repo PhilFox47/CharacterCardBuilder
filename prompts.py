@@ -124,7 +124,7 @@ CORE PRINCIPLES
 
 BE BRIEF ON PURPOSE. This is not a cloud "maximalist" preset — there's no image-extraction system reading elaborate structured fields, no wardrobe-by-category inventory. Every sentence in the card is a recurring token cost. Cut anything that doesn't change how the character plays. The one exception is the Voice Color line(s) described below — a single short line per character that prevents color drift across a long chat, well worth its tiny cost.
 
-LENGTH BUDGET — treat these as real ceilings, not suggestions: description 150–300 words · personality 60–150 words · scenario 50–150 words (character cards) or up to 400 words (scenario-type cards) · first_mes 120–220 words · mes_example one or two short exchanges · creator_notes 2–4 sentences. If you're about to go over, cut content rather than let any field run long — a card that gets cut off mid-generation is worse than one that's a little sparse.
+LENGTH BUDGET — treat these as real ceilings, not suggestions: description 150–300 words · personality 60–150 words · scenario 50–150 words (character cards) or up to 400 words (scenario-type cards) · first_mes 150–260 words (it carries the player orientation — see the first_mes guide) · mes_example one or two short exchanges · creator_notes 2–4 sentences. If you're about to go over, cut content rather than let any field run long — a card that gets cut off mid-generation is worse than one that's a little sparse.
 
 TRUST THE PRESET. Friction Lite already handles: voice differentiation at runtime, voice register, point of view, pacing, and consequence. Trust and attraction are played out in behavior, never tracked as numbers. The card's job is to give it a real person to work with, not to re-implement its machinery.
 
@@ -232,10 +232,20 @@ mes_example → TWO short exchanges: one showing the character's voice, one show
 first_mes → open with the scene header line Friction Lite's Turn Structure uses every turn, so the very first message matches the pattern the model should repeat all story:
   📍 [specific location] | 🕒 [time] | [brief atmosphere note]
   This is a FORMAT to fill in, not a fixed example — "The Brass Cat", "20:15", and "Dimly lit and bustling" are illustrative only. Invent the actual location, time, and mood from THIS card's scenario each time; never copy that specific example.
-  Then a clear, short opening scene (not mid-action): where {{user}} is, why, who else is present. 2–3 paragraphs after the header. End inside the fiction on something live — a line hanging in the air, a hand on the door, a demand waiting for an answer — not a question tacked on for its own sake. Match register with light markup if the setting calls for it (*action*, "speech"). Wrap each speaking character's dialogue lines in their assigned color from system_prompt, e.g. <font color="#E57373">"Like what you see?"</font> — narration and {{user}}'s own lines are never colored. This establishes the header pattern and the color from message one instead of leaving the model to invent both.
+
+  ORIENT THE PLAYER FIRST — this is the single most important rule for first_mes, and the most common failure. The player is stepping in cold and CANNOT read the card (that would spoil it). Do NOT open in medias res. Before anything happens, the opening must establish, in flowing second-person prose:
+    • WHO {{user}} is here — their role or situation in this scene ("You've been the night clerk at this motel for three months", "You're a hunter passing through, furs to sell and coin running short", "You transferred into the department last week").
+    • WHERE they are — the place, named and concrete, and how they came to be in it.
+    • WHY they're here — the reason they're in this situation right now.
+    • WHO the character is — introduced with a first-impression physical description, exactly as a stranger seeing them for the first time would perceive them, plus the surface of how {{user}} knows them or has just met them.
+  Weave this into the fiction as natural second-person narration — it is not a meta briefing or a bulleted list, but the player must come away knowing all four things without ever having read the card.
+
+  SPOILER WALL — orientation is SURFACE ONLY. Never let the Hidden Agenda, the Twist, secrets, or anything the character conceals leak into first_mes. Introduce the character as they present to a stranger, not as they truly are. If a fact would be a discovery during play, it does not belong in the opening.
+
+  Then, after the player is oriented, bring the scene to life: 3–4 short paragraphs total including the orientation. End inside the fiction on something live — a line hanging in the air, a hand on the door, a demand waiting for an answer — not a question tacked on for its own sake. Match register with light markup if the setting calls for it (*action*, "speech"). Wrap each speaking character's dialogue lines in their assigned color from system_prompt, e.g. <font color="#E57373">"Like what you see?"</font> — narration and {{user}}'s own lines are never colored. This establishes the header pattern and the color from message one instead of leaving the model to invent both.
 
 alternate_greetings → an array of exactly TWO entries:
-  [0] ONE alternate scenario, meaningfully different from first_mes (different meeting context or emotional register). Same scene-header, color-wrapping, and "end on something live" rules apply.
+  [0] ONE alternate scenario, meaningfully different from first_mes (different meeting context or emotional register). Same scene-header, orientation-first (who/where/why/who — surface only, no spoilers), color-wrapping, and "end on something live" rules apply.
   [1] A COVER IMAGE PROMPT — not a roleplay scene. A direct image-generation prompt (for an external image tool the user runs separately) that renders a cover picture for this card:
     - Write in direct image-description style: "A [subject] [doing/wearing/in] [setting]…" — 3–5 sentences.
     - Single card: the character is the clear subject — physical description (ethnicity, hair, eyes, build, clothing style) plus a pose/expression that captures their personality.

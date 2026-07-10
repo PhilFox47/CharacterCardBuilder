@@ -292,15 +292,19 @@ If under 18: omit this entirely. No exceptions, no "innocent" version. When age 
 
 For adult NSFW characters, add a short block in the description:
   Orientation: [with one line of nuance]
-  Turn-ons: 4–6 SPECIFIC named acts/dynamics (not feelings — "confidence" and "feeling desired" are personality traits, not kinks). Tag each (explored)/(known)/(hidden) based on their experience level — a sheltered character gets the same specific kinks as a confident one, just tagged (hidden) instead of (explored).
+  Turn-ons: 5–8 named acts/dynamics from the database (not feelings — "confidence" and "feeling desired" are personality traits, not kinks). Tag each with a LEVEL:
+    (Fetish) — a must-have. They crave it, seek it out, and sex feels incomplete without it. Give 1–2 only; these are the character's real sexual drivers.
+    (Kink) — strongly into it; a reliable turn-on they actively enjoy. 2–4 of these.
+    (Preference) — a like: welcome and enjoyed, but optional. 1–3 of these.
+    Optionally append (hidden) to a Fetish or Kink the character hasn't acted on or admitted — a sheltered character can crave things they've never done. The Level says how much they WANT it; (hidden) says they haven't lived it yet.
   Limits: up to 5, tagged (hard)/(soft)/(suppressed).
 
-CHOOSING TAGS — pull from the KINK DATABASE below, and fight the default:
-- SELECT from the database; do not invent tags off the top of your head. If a fitting kink isn't listed, you may add it, but reach for the database first.
+CHOOSING & COMPOSING — pull from the KINK DATABASE below, and fight the default:
+- ANCHOR, THEN EXPRESS. Start from one or two BROAD (B) drives that define this character's sexuality (e.g. "degradation (Fetish)", "foot fetish (Kink)"), then flesh them out with NICHE (N) and SPECIFIC (S) picks that express those drives concretely (e.g. "name-calling (Kink)", "toe sucking (Preference)"). A broad anchor plus specific expressions reads as a real person; a pile of same-size tags reads as a checklist.
 - DERIVE from THIS character — their body, history, power dynamic, guardedness, what they'd be drawn to or ashamed of. A widowed war medic, a spoiled heiress, and a burnt-out priest should share almost no tags.
-- SPAN the categories. Don't pull all 4–6 turn-ons from "BDSM & power dynamics." A real person's kinks cross domains — an act, a sensation, a clothing or body thing, a dynamic. Draw from at least 2–3 different database categories.
-- AVOID THE AUTOPILOT SET. praise kink, edging, brat taming, dirty talk, bondage, and orgasm denial are the tags every card reaches for. Use one at most, only if it genuinely fits, and always pair it with less-obvious, more character-specific picks from elsewhere in the database.
+- SPAN the categories. Don't pull everything from one domain. Cross domains — an act, a sensation, a body/clothing thing, a dynamic, a physical type they're drawn to. At least 2–3 different database categories.
+- AVOID THE AUTOPILOT SET. praise kink, edging, brat taming, dirty talk, bondage, orgasm denial are the tags every card reaches for. Use one at most, only if it genuinely fits, and always pair it with less-obvious, more character-specific picks.
 - Limits get the same treatment — specific named acts from the database, not "anything degrading."
-- Keep it short: 4–6 turn-ons, up to 5 limits. Quality and specificity over quantity.
+- SELECT from the database; if a genuinely fitting kink isn't listed you may add it, but reach for the database first.
 
 """ + KINK_VOCABULARY_TEXT

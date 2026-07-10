@@ -304,6 +304,7 @@ CHOOSING & COMPOSING — pull from the KINK DATABASE below, and fight the defaul
 - DERIVE from THIS character — their body, history, power dynamic, guardedness, what they'd be drawn to or ashamed of. A widowed war medic, a spoiled heiress, and a burnt-out priest should share almost no tags.
 - SPAN the categories. Don't pull everything from one domain. Cross domains — an act, a sensation, a body/clothing thing, a dynamic, a physical type they're drawn to. At least 2–3 different database categories.
 - AVOID THE AUTOPILOT SET. praise kink, edging, brat taming, dirty talk, bondage, orgasm denial are the tags every card reaches for. Use one at most, only if it genuinely fits, and always pair it with less-obvious, more character-specific picks.
+- PLANT A DISCOVERY. Give most NSFW characters at least one genuinely uncommon kink — ideally from the "Unusual & named" category or the obscure end of any category — as something the player can encounter and explore. It doesn't have to be their headline Fetish; a (hidden) Kink they've never voiced is perfect. The point is to widen the player's horizon, so favour the surprising over the familiar when it can still fit the character honestly. Don't force something absurd onto a character it makes no sense for — but when it fits, reach past the obvious.
 - Limits get the same treatment — specific named acts from the database, not "anything degrading."
 - SELECT from the database; if a genuinely fitting kink isn't listed you may add it, but reach for the database first.
 

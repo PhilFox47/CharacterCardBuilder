@@ -25,6 +25,8 @@ const apiKeyRow       = $('apiKeyRow');
 const setupBackend    = $('setupBackend');
 const lmStudioRow     = $('lmStudioRow');
 const setupLmUrl      = $('setupLmUrl');
+const setupModel      = $('setupModel');
+const setupModelNote  = $('setupModelNote');
 const settingsBackend    = $('settingsBackend');
 const settingsApiKeyField = $('settingsApiKeyField');
 const settingsLmUrlField  = $('settingsLmUrlField');
@@ -108,6 +110,10 @@ async function init() {
     syncModelFieldToBackend();
   });
 
+  // The setup-screen model field and the settings model field mirror each other.
+  setupModel.addEventListener('input', () => { settingsModel.value = setupModel.value; });
+  settingsModel.addEventListener('input', () => { setupModel.value = settingsModel.value; });
+
   // Type selection
   document.querySelectorAll('.type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -174,21 +180,23 @@ function applyBackendVisibility() {
 }
 
 // Each backend keeps its OWN model override, so switching backends never
-// sends a leftover Nano-GPT model string to LM Studio (or vice versa).
+// sends a leftover Nano-GPT model string to LM Studio (or vice versa). The
+// setup-screen field and the settings field are two views of the same value.
 function syncModelFieldToBackend() {
+  let value, placeholder, note;
   if (state.backend === 'lmstudio') {
-    settingsModel.value = state.lmModel || state.serverModelLm || '';
-    settingsModel.placeholder = 'e.g. gemma-3-12b-it-qat-heretic';
-    if (settingsModelNote) {
-      settingsModelNote.textContent = "The exact model ID LM Studio shows for what you have loaded. Leave blank to let LM Studio use whatever's currently loaded.";
-    }
+    value = state.lmModel || state.serverModelLm || '';
+    placeholder = 'serenity-12b@q5_k_m';
+    note = "The exact model identifier to request. LM Studio loads it on demand (Just-In-Time loading must be enabled in LM Studio). Leave blank to use whatever's already loaded.";
   } else {
-    settingsModel.value = state.model || state.serverModelNano || '';
-    settingsModel.placeholder = 'xiaomi/mimo-v2.5-pro:thinking';
-    if (settingsModelNote) {
-      settingsModelNote.textContent = 'Overrides the server default. Saved locally per backend — switching backends won\'t overwrite the other one\'s model.';
-    }
+    value = state.model || state.serverModelNano || '';
+    placeholder = 'xiaomi/mimo-v2.5-pro:thinking';
+    note = "Overrides the server default. Saved locally per backend — switching backends won't overwrite the other one's model.";
   }
+  if (setupModel) { setupModel.value = value; setupModel.placeholder = placeholder; }
+  if (settingsModel) { settingsModel.value = value; settingsModel.placeholder = placeholder; }
+  if (setupModelNote) setupModelNote.textContent = note;
+  if (settingsModelNote) settingsModelNote.textContent = note;
 }
 
 /* ── API helpers ─────────────────────────────────────────── */
@@ -213,12 +221,27 @@ function getApiKey() {
 
 function getModel() {
   // Whatever's currently typed wins (it reflects the active backend — see
-  // syncModelFieldToBackend). Otherwise fall back to that backend's own
+  // syncModelFieldToBackend). The setup-screen field and the settings field
+  // mirror each other; read either. Otherwise fall back to that backend's own
   // saved override. Returning undefined lets the server use its default
-  // (for LM Studio: whatever model is currently loaded).
-  const typed = settingsModel.value.trim();
+  // (for LM Studio: whatever's loaded, else the server's default model).
+  const typed = (setupModel && setupModel.value.trim()) || settingsModel.value.trim();
   if (typed) return typed;
   return (getBackend() === 'lmstudio' ? state.lmModel : state.model) || undefined;
+}
+
+// Persist the currently-typed model into the active backend's own slot.
+function persistModel() {
+  const model = getModel() || '';
+  if (getBackend() === 'lmstudio') {
+    state.lmModel = model;
+    if (model) localStorage.setItem('cc_lmstudio_model', model);
+    else localStorage.removeItem('cc_lmstudio_model');
+  } else {
+    state.model = model;
+    if (model) localStorage.setItem('nano_model', model);
+    else localStorage.removeItem('nano_model');
+  }
 }
 
 function getBackend() {
@@ -312,6 +335,8 @@ async function startSession() {
     localStorage.setItem('nano_api_key', apiKey);
     settingsApiKey.value = apiKey;
   }
+  // Remember the model requested on the start screen for this backend.
+  persistModel();
 
   if (state.cardType === 'import') {
     return importCard(apiKey);

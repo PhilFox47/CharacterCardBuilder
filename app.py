@@ -33,7 +33,7 @@ LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 LM_STUDIO_API_KEY = os.getenv("LM_STUDIO_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
-DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "local-model")
+DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "serenity-12b@q5_k_m")
 DEFAULT_BACKEND = os.getenv("BACKEND", "lmstudio")  # "nanogpt" | "lmstudio"
 GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min default
 
@@ -287,11 +287,13 @@ async def call_api(
             "If it keeps happening, shorten your conversation before generating."
         )
     except httpx.RequestError as e:
-        raise HTTPException(502, f"Network error reaching Nano-GPT: {e}")
+        label = "LM Studio" if backend == "lmstudio" else "Nano-GPT"
+        raise HTTPException(502, f"Network error reaching {label}: {e}")
 
     if resp.status_code != 200:
-        print(f"[call_api] Nano-GPT error {resp.status_code}: {resp.text[:500]}", flush=True)
-        raise HTTPException(resp.status_code, f"Nano-GPT API error ({resp.status_code}): {resp.text[:300]}")
+        label = "LM Studio" if backend == "lmstudio" else "Nano-GPT"
+        print(f"[call_api] {label} error {resp.status_code}: {resp.text[:500]}", flush=True)
+        raise HTTPException(resp.status_code, f"{label} API error ({resp.status_code}): {resp.text[:300]}")
 
     data = resp.json()
     print(f"[call_api] response reports model={data.get('model')!r}", flush=True)

@@ -190,6 +190,12 @@
       <span class="api-key-note">This address is contacted by the SERVER running this app, not your browser. "localhost" here means the server machine — if LM Studio runs on that same machine, the default is already correct. If LM Studio runs elsewhere on your network, enter that machine's address instead.</span>
     </div>
 
+    <div class="api-key-row" id="modelRow">
+      <label>Model</label>
+      <input type="text" id="setupModel" placeholder="serenity-12b@q5_k_m" autocomplete="off">
+      <span class="api-key-note" id="setupModelNote">The exact model identifier to request. LM Studio will load it on demand (Just-In-Time loading must be enabled in LM Studio). Leave blank to use whatever's already loaded.</span>
+    </div>
+
     <button class="btn btn-primary" id="startBtn" style="width:100%; justify-content:center; padding:12px">
       Start Building →
     </button>

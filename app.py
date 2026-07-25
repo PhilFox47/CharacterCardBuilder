@@ -427,6 +427,7 @@ async def _run_generation_job(
     api_key: str,
     req_model: Optional[str],
     session: dict,
+    origin_tag: str,
     temperature: float,
     backend: str = "nanogpt",
     base_url: Optional[str] = None,
@@ -446,6 +447,13 @@ async def _run_generation_job(
             base_url=base_url,
         )
         card = finalize_card(extract_json(raw))
+        # Stamp the origin tag (built-from-scratch vs. reworked import), replacing
+        # any stray placeholder the model emitted.
+        if isinstance(card.get("data"), dict):
+            tags = [t for t in card["data"].get("tags", []) if "Rocinante" not in t]
+            tags.insert(0, origin_tag)
+            card["data"]["tags"] = tags
+            card["tags"] = tags
         session["generated_card"] = card
         jobs[job_id] = {"status": "done", "card": card}
     except HTTPException as e:
@@ -632,10 +640,11 @@ async def generate_card(req: GenerateRequest, background_tasks: BackgroundTasks)
             f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
+    origin_tag = "Rocinante Rework" if (imported is not None or req.mode in ("edit", "overhaul")) else "Rocinante Original"
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, 0.7, backend, base_url
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.7, backend, base_url
     )
     return {"job_id": job_id}
 
@@ -672,10 +681,11 @@ async def regenerate_card(req: RegenerateRequest, background_tasks: BackgroundTa
             f"Generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
+    origin_tag = "Rocinante Rework" if imported is not None else "Rocinante Original"
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, 0.75, backend, base_url
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.75, backend, base_url
     )
     return {"job_id": job_id}
 

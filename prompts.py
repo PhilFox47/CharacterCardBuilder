@@ -98,15 +98,16 @@ Keep replies short."""
 EDIT_INSTRUCTION = """You are REVISING an existing character card. Apply the requested changes and keep everything else. Any field you touch must meet the lean Rocinante prose standard: plain natural language, concrete and physical, no stat blocks, no instruction blocks, no info-headers, no colour tags. Output the COMPLETE revised card as raw JSON (all fields). Output ONLY the JSON object."""
 
 
-OVERHAUL_INSTRUCTION = """You are performing a FULL REBUILD of an existing character card into lean Rocinante prose.
+OVERHAUL_INSTRUCTION = """You are performing a FULL REBUILD of an existing character card into lean Rocinante prose. The original may be ANY format — Friction, W++/PList, plain prose, a bloated maximalist card, anything. Treat it purely as source material for WHO the character is.
 
-PRESERVE the character's core identity — name, concept, defining traits, setting. Do NOT replace them with someone else. Then rebuild the card to the standard below:
-- Convert any stat-block / W++ / bracketed-attribute formatting into flowing natural-language prose
-- Strip every instruction block, info-header line (📍/🕒), colour/font tag, and "[System: …]" note
-- Make the description concrete and physical (how they move and behave), give them a want that isn't {{user}}, and state their resistance as explicit behaviour plus what would move them
-- Fold heavy lore (backstory, factions, places, side characters) into keyword lorebook entries instead of the main card
-- Keep the permanent card (description + personality + scenario + any examples) lean, roughly 400–700 tokens
-- Rewrite the greeting in third person past tense, concrete and sensory, ending on something for {{user}} to answer
+PRESERVE the character's core identity — name, concept, defining traits, setting, and their sexual character. Do NOT replace them with someone else. Everything else is negotiable. Then rebuild from the ground up to the standard below:
+- AGGRESSIVELY CUT. The whole point is a lean card. It is not only acceptable but expected to drop most of the original's detail — trackers, stat blocks, wardrobe inventories, exhaustive backstory, dozens of tagged fields — and keep only what makes this character live. A short vivid card that nails the core beats a faithful bloated one. When in doubt, cut it.
+- Convert any stat-block / W++ / bracketed-attribute formatting into flowing natural-language prose.
+- Strip every instruction block, info-header line (📍/🕒), colour/font tag, tracker, and "[System: …]" note.
+- Make the description concrete and physical, give them a want that isn't {{user}}, state their resistance as explicit behaviour plus what would move them, and give them a vivid specific sexual self (temperament, appetites, intimate voice) per the sexuality guidance.
+- Fold any lore worth keeping (backstory, factions, places, side characters) into keyword lorebook entries instead of the main card — and drop lore that doesn't earn its place.
+- Keep the permanent card (description + personality + scenario + any examples) lean, roughly 400–700 tokens.
+- Rewrite the greeting fresh in third person past tense, concrete and sensory, ending on something for {{user}} to answer.
 
 Output the COMPLETE rebuilt card as raw JSON. Output ONLY the JSON object."""
 
@@ -222,7 +223,7 @@ creator_notes → 2–4 sentences for someone browsing: a one-line hook, what th
 
 alternate_greetings → ONE alternate opening, meaningfully different (different meeting, mood, or moment), same third-person-past prose style and "end on something to answer" rule.
 
-tags → 4–8 short tags: genre, character type, themes, and NSFW tags if applicable. (Metadata only, not injected.)
+tags → 4–8 short tags: genre, character type, themes, and NSFW tags if applicable. (Metadata only, not injected.) Also include "Rocinante Original" as the first tag — the system replaces it with "Rocinante Rework" automatically when the card is a reworked import, so just always write "Rocinante Original" here.
 
 system_prompt / post_history_instructions → leave both "". The behavioural instructions live in the user's own preset, never in the card.
 

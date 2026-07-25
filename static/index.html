@@ -18,7 +18,7 @@
   <header class="app-header">
     <span style="font-size:20px">⚔</span>
     <h1>Character Card Builder</h1>
-    <span class="header-subtitle" id="headerSubtitle">SillyTavern · Friction Lite</span>
+    <span class="header-subtitle" id="headerSubtitle">SillyTavern · Rocinante prose</span>
     <div class="header-actions">
       <button class="btn btn-ghost" id="newBtn" style="display:none">＋ New Card</button>
       <button class="btn-icon" id="settingsBtn" title="Settings">⚙</button>
@@ -36,7 +36,7 @@
         <span class="chat-type-badge" id="typeBadge">Single</span>
         <span style="font-size:13px; color:var(--text-muted)" id="chatStatus">Gathering details…</span>
         <div class="chat-topbar-actions">
-          <button class="btn btn-ghost" id="overhaulBtn" style="display:none">⚡ Overhaul for Friction</button>
+          <button class="btn btn-ghost" id="overhaulBtn" style="display:none">⚡ Rebuild</button>
           <button class="btn btn-secondary" id="generateBtn">✨ Generate Card</button>
         </div>
       </div>
@@ -133,7 +133,7 @@
 <div class="setup-overlay" id="setupOverlay">
   <div class="setup-box">
     <h2>⚔ Character Card Builder</h2>
-    <p>Build lean SillyTavern character cards via AI conversation — optimised for the Friction Lite preset. Use Nano-GPT in the cloud, or a local model through LM Studio.</p>
+    <p>Build lean, natural-prose SillyTavern character cards via AI conversation — tuned for Rocinante-X-12B and similar models. Use Nano-GPT in the cloud, or a local model through LM Studio.</p>
 
     <div class="card-type-grid">
       <button class="type-btn active" data-type="single">
@@ -167,7 +167,7 @@
         <input type="file" id="importFile" accept=".json,application/json" style="display:none">
         <span class="import-file-name" id="importFileName"></span>
       </div>
-      <span class="api-key-note">Supports SillyTavern v2/v3 cards. We'll assess it, then you can edit or overhaul it for Friction.</span>
+      <span class="api-key-note">Supports SillyTavern v2/v3 cards. We'll assess it, then you can edit or rebuild it into lean prose.</span>
     </div>
 
     <div class="api-key-row" id="backendRow">

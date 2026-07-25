@@ -314,12 +314,15 @@ _BREADTH_TAG = {"broad": "B", "niche": "N", "specific": "S"}
 def render_vocabulary() -> str:
     """Render the database into the text block injected into the generation prompt."""
     lines = [
-        "KINK DATABASE — select from these. Each entry is tagged by BREADTH: "
-        "(B) broad domain · (N) niche practice · (S) specific act/detail. "
-        "Anchor a character on one or two broad (B) drives, then express those with "
-        "niche (N) and specific (S) picks — that's what makes a sexuality feel personal. "
-        "The 'Unusual & named' category is deliberately obscure — reach into it when a "
-        "character should surprise the player with something they've never encountered.",
+        "KINK VOCABULARY — a menu to draw a character's appetites and limits FROM, so "
+        "they don't collapse to the same few tropes. Each entry is tagged by BREADTH: "
+        "(B) broad domain · (N) niche practice · (S) specific act/detail. Anchor a "
+        "character on one or two broad (B) drives, then make them concrete with niche (N) "
+        "and specific (S) details. The 'Unusual & named' category is deliberately obscure — "
+        "reach into it when a character should surprise the player with something new. "
+        "IMPORTANT: express whatever you pick as FACTS ABOUT THE CHARACTER woven into the "
+        "prose ('She's greedy about being pinned down and goes shy the instant she's praised'), "
+        "never as a tagged list, a checklist, or a content rule.",
         "",
     ]
     for category, entries in DATABASE.items():

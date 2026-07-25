@@ -427,7 +427,6 @@ async def _run_generation_job(
     api_key: str,
     req_model: Optional[str],
     session: dict,
-    origin_tag: str,
     temperature: float,
     backend: str = "nanogpt",
     base_url: Optional[str] = None,
@@ -447,11 +446,6 @@ async def _run_generation_job(
             base_url=base_url,
         )
         card = finalize_card(extract_json(raw))
-        if isinstance(card.get("data"), dict):
-            tags = card["data"].setdefault("tags", [])
-            if not any("Friction" in t for t in tags):
-                tags.append(origin_tag)
-            card["tags"] = card["data"]["tags"]
         session["generated_card"] = card
         jobs[job_id] = {"status": "done", "card": card}
     except HTTPException as e:
@@ -638,11 +632,10 @@ async def generate_card(req: GenerateRequest, background_tasks: BackgroundTasks)
             f"Now generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    origin_tag = "Friction Rework" if (imported is not None or req.mode in ("edit", "overhaul")) else "Friction Original"
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.7, backend, base_url
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, 0.7, backend, base_url
     )
     return {"job_id": job_id}
 
@@ -679,11 +672,10 @@ async def regenerate_card(req: RegenerateRequest, background_tasks: BackgroundTa
             f"Generate the complete character card JSON. Output ONLY the raw JSON object."
         )
 
-    origin_tag = "Friction Rework" if imported is not None else "Friction Original"
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     background_tasks.add_task(
-        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, origin_tag, 0.75, backend, base_url
+        _run_generation_job, job_id, gen_prompt, api_key, req.model, session, 0.75, backend, base_url
     )
     return {"job_id": job_id}
 

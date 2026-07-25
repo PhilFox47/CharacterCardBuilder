@@ -176,7 +176,7 @@ function applyBackendVisibility() {
   const showApiKey = !isLocal && !state.hasServerKey;
   apiKeyRow.style.display = showApiKey ? 'flex' : 'none';
   settingsApiKeyField.style.display = showApiKey ? 'flex' : 'none';
-  headerSubtitle.textContent = isLocal ? 'SillyTavern · Friction Lite · LM Studio (local)' : 'SillyTavern · Friction Lite · Nano-GPT';
+  headerSubtitle.textContent = isLocal ? 'SillyTavern · Rocinante prose · LM Studio (local)' : 'SillyTavern · Rocinante prose · Nano-GPT';
 }
 
 // Each backend keeps its OWN model override, so switching backends never
@@ -398,7 +398,7 @@ async function importCard(apiKey) {
     typeBadge.textContent = 'Editing';
     overhaulBtn.style.display = 'inline-flex';
     generateBtn.textContent = '✨ Apply Edits';
-    chatStatus.textContent = 'Review the card, then edit or overhaul.';
+    chatStatus.textContent = 'Review the card, then edit or rebuild.';
 
     // Show the imported card immediately
     state.card = res.card;
@@ -508,9 +508,9 @@ async function pollJob(jobId) {
 async function generateCard(mode = null) {
   if (!state.sessionId || state.loading) return;
 
-  const verb = mode === 'overhaul' ? 'Overhauling' : (mode === 'edit' ? 'Applying edits to' : 'Generating');
-  const noun = mode === 'overhaul' ? 'overhauled' : (mode === 'edit' ? 'edited' : 'generated');
-  addMessage('assistant', `✨ ${verb} your character card — this uses a thinking model and may take several minutes (longer for group/overhaul jobs). Please wait…`);
+  const verb = mode === 'overhaul' ? 'Rebuilding' : (mode === 'edit' ? 'Applying edits to' : 'Generating');
+  const noun = mode === 'overhaul' ? 'rebuilt' : (mode === 'edit' ? 'edited' : 'generated');
+  addMessage('assistant', `✨ ${verb} your character card — this can take a little while. Please wait…`);
   chatStatus.textContent = `${verb} card…`;
   setLoading(true);
   addTypingIndicator();

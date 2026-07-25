@@ -186,7 +186,7 @@ function syncModelFieldToBackend() {
   let value, placeholder, note;
   if (state.backend === 'lmstudio') {
     value = state.lmModel || state.serverModelLm || '';
-    placeholder = 'serenity-12b@q5_k_m';
+    placeholder = 'rocinante-x-12b-v1';
     note = "The exact model identifier to request. LM Studio loads it on demand (Just-In-Time loading must be enabled in LM Studio). Leave blank to use whatever's already loaded.";
   } else {
     value = state.model || state.serverModelNano || '';

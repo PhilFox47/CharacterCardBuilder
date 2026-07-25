@@ -33,7 +33,7 @@ LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 DEFAULT_API_KEY = os.getenv("NANO_GPT_API_KEY", "")
 LM_STUDIO_API_KEY = os.getenv("LM_STUDIO_API_KEY", "")
 DEFAULT_MODEL = os.getenv("NANO_GPT_MODEL", "xiaomi/mimo-v2.5-pro:thinking")
-DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "serenity-12b@q5_k_m")
+DEFAULT_LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "rocinante-x-12b-v1")
 DEFAULT_BACKEND = os.getenv("BACKEND", "lmstudio")  # "nanogpt" | "lmstudio"
 GENERATION_TIMEOUT = float(os.getenv("GENERATION_TIMEOUT", "3600"))  # 60 min default
 
